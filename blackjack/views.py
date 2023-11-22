@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 
@@ -8,7 +8,10 @@ from .models import User
 
 
 def index(request):
-    return render(request, "blackjack/login.html")
+    if request.user.is_authenticated:
+        return render(request, "blackjack/menu.html")
+    else:
+        return HttpResponseRedirect(reverse("login"))
 
 
 def login_view(request):
@@ -61,3 +64,8 @@ def register(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "blackjack/register.html")
+
+
+def blackjack(request):
+    data = {"id": 1}
+    return render(request, "blackjack/blackjack.html")
