@@ -516,7 +516,7 @@ let totalBet = 0;
 
 document.addEventListener('DOMContentLoaded',function(){
     console.log('dom loaded...');
-    document.querySelector("#deal-view").style.display = 'none';
+    toggleViews([["deal-view",0]]);
     addChipToBet();
     deal();
 })
@@ -534,23 +534,59 @@ function addChipToBet(){
 }
 // for assigning multiple variables at once in javascript 
 // https://sabe.io/blog/javascript-declare-multiple-variables
+
+// destructing statement: 
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment
+
+// empty block as 'pass'
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/Empty
 function deal(){
     document.querySelector('.deal-btn').addEventListener('click',function(){
+        let playerCards = [];
+        let dealerCards = [];
+        let dealerUp;
         for (let i = 0; i < 4; i++) {
             let card = getRandomCard();
             let cardEl = document.createElement('h2');
             cardEl.innerHTML = card;
-            i % 2 == 0 ? 
-            document.getElementById('dealer-cards').appendChild(cardEl) : 
-            document.getElementById('player-cards').appendChild(cardEl);
-            
+            if(i % 2 == 0){
+                document.getElementById('player-cards').appendChild(cardEl);
+                playerCards.push(card);
+            }else{
+                if(i === 0){
+                    dealerUp = card;
+                }
+                dealerCards.push(card);
+                document.getElementById('dealer-cards').appendChild(cardEl)
+            }            
         }
-        document.querySelector('#bet-view').style.display = 'none';
+        document.getElementById('bet-view').style.display = 'none';
         document.getElementById('deal-view').style.display = 'block';
+        evalBlackjack(...playerCards) ? console.log('win!') : {} ;
+        evalBlackjack(...dealerCards) ? console.log('lose!') : {} ;
     })    
 }
 
 function getRandomCard(){
     let idx = Math.floor(Math.random() * cards.length);
     return cards[idx];
+}
+
+function evalBlackjack(c1,c2){
+    return c1 + c2 == 21 ? true : false;
+}
+
+function showChoiceBtns(){
+
+}
+
+function toggleViews(actionList){
+    for (let i = 0; i < actionList.length; i++) {
+        let [view,action] = actionList[i];
+        if(action === 0){
+            document.getElementById(view).style.display = 'none';
+        }else{
+            document.getElementById(view).style.display = 'block';
+        }
+    }
 }
