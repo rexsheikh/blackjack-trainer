@@ -516,7 +516,7 @@ let totalBet = 0;
 
 document.addEventListener('DOMContentLoaded',function(){
     console.log('dom loaded...');
-    toggleViews([["deal-view",0]]);
+    toggleViews([["deal-view",0],["choice-view",0]]);
     addChipToBet();
     deal();
 })
@@ -538,8 +538,6 @@ function addChipToBet(){
 // destructing statement: 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment
 
-// empty block as 'pass'
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/Empty
 function deal(){
     document.querySelector('.deal-btn').addEventListener('click',function(){
         let playerCards = [];
@@ -560,10 +558,11 @@ function deal(){
                 document.getElementById('dealer-cards').appendChild(cardEl)
             }            
         }
+        toggleViews([['bet-view',0],['deal-view',1]])
         document.getElementById('bet-view').style.display = 'none';
         document.getElementById('deal-view').style.display = 'block';
-        evalBlackjack(...playerCards) ? console.log('win!') : {} ;
-        evalBlackjack(...dealerCards) ? console.log('lose!') : {} ;
+        evalBlackjack(...playerCards) ? console.log('win!') : toggleViews([['choice-view',1]]);
+        evalBlackjack(...dealerCards) ? console.log('lose!') : toggleViews([['choice-view',1]]) ;
     })    
 }
 
