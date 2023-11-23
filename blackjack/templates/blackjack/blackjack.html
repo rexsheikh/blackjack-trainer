@@ -15,6 +15,40 @@
 <body>
     <h1>blackjack screen</h1>
     <script src="{% static 'blackjack/blackjack.js' %}"></script>
+    <div class="container-xl">
+
+    </div>
+    <div class="container text-center" id="bet-view">
+        <div class="row align-items-end">
+            <div class="col p-3">
+                <button class="btn btn-info bet-btn" data-chip-val="5">5</button>
+            </div>
+            <div class="col p-3">
+                <button class="btn btn-info bet-btn" data-chip-val="10">10</button>
+            </div>
+            <div class="col p-3">
+                <button class="btn btn-info bet-btn" data-chip-val="15">15</button>
+            </div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col p-3">
+                <button class="btn btn-info deal-btn">Deal</button>
+            </div>
+        </div>
+    </div>
+    <div class="container text-center" id="deal-view">
+        <div class="row align-items-start">
+            <div class="col p-3">
+                <div id="dealer-cards"></div>
+            </div>
+        </div>
+        <div class="row align-items-start">
+            <div class="col p-3">
+                <div id="player-cards"></div>
+            </div>
+        </div>
+
+    </div>
 </body>
 
 </html>
