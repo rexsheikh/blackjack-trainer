@@ -516,7 +516,7 @@ let totalBet = 0;
 
 document.addEventListener('DOMContentLoaded',function(){
     console.log('dom loaded...');
-    document.getElementById('deal-view').style.display = 'none';
+    document.querySelector("#deal-view").style.display = 'none';
     addChipToBet();
     deal();
 })
@@ -535,21 +535,21 @@ function addChipToBet(){
 
 function deal(){
     document.querySelector('.deal-btn').addEventListener('click',function(){
+        let dealerUp = getRandomCard();
+        let player_card_a = getRandomCard();
+        let player_card_b = getRandomCard();
+        const dealerShow = document.createElement('h2');
+        const playerCardShowA = document.createElement('h2');
+        const playerCardShowB = document.createElement('h2');
+        dealerShow.innerHTML = dealerUp;
+        playerCardShowA.innerHTML = player_card_a;
+        playerCardShowB.innerHTML = player_card_b;
+        document.getElementById('dealer-cards').appendChild(dealerShow);
+        document.getElementById('player-cards').appendChild(playerCardShowA);
+        document.getElementById('player-cards').appendChild(playerCardShowB);
         document.querySelector('#bet-view').style.display = 'none';
+        document.getElementById('deal-view').style.display = 'block';
     })
-    let dealerUp = getRandomCard();
-    let player_card_a = getRandomCard();
-    let player_card_b = getRandomCard();
-    const dealerShow = document.createElement('h2');
-    const playerCardShowA = document.createElement('h2');
-    const playerCardShowB = document.createElement('h2');
-    dealerShow.innerHTML = dealerUp;
-    playerCardShowA.innerHTML = player_card_a;
-    playerCardShowB.innerHTML = player_card_b;
-    document.getElementById('dealer-cards').appendChild(dealerShow);
-    document.getElementById('player-cards').appendChild(playerCardShowA);
-    document.getElementById('player-cards').appendChild(playerCardShowB);
-    document.getElementById('deal-view').style.display = 'block';
 
     
 }
