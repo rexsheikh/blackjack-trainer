@@ -532,26 +532,22 @@ function addChipToBet(){
         })
     })
 }
-
+// for assigning multiple variables at once in javascript 
+// https://sabe.io/blog/javascript-declare-multiple-variables
 function deal(){
     document.querySelector('.deal-btn').addEventListener('click',function(){
-        let dealerUp = getRandomCard();
-        let player_card_a = getRandomCard();
-        let player_card_b = getRandomCard();
-        const dealerShow = document.createElement('h2');
-        const playerCardShowA = document.createElement('h2');
-        const playerCardShowB = document.createElement('h2');
-        dealerShow.innerHTML = dealerUp;
-        playerCardShowA.innerHTML = player_card_a;
-        playerCardShowB.innerHTML = player_card_b;
-        document.getElementById('dealer-cards').appendChild(dealerShow);
-        document.getElementById('player-cards').appendChild(playerCardShowA);
-        document.getElementById('player-cards').appendChild(playerCardShowB);
+        for (let i = 0; i < 4; i++) {
+            let card = getRandomCard();
+            let cardEl = document.createElement('h2');
+            cardEl.innerHTML = card;
+            i % 2 == 0 ? 
+            document.getElementById('dealer-cards').appendChild(cardEl) : 
+            document.getElementById('player-cards').appendChild(cardEl);
+            
+        }
         document.querySelector('#bet-view').style.display = 'none';
         document.getElementById('deal-view').style.display = 'block';
-    })
-
-    
+    })    
 }
 
 function getRandomCard(){
