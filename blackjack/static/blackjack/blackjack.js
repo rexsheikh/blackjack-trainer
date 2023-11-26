@@ -592,6 +592,11 @@ function getChoice(pA,pB,dU){
                     dealer_up: dU,
                 }),
             })
+            .then(response => response.json())
+            .then(result => {
+                console.log(result);
+                
+            })
         })
     })
     
