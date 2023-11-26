@@ -1,3 +1,6 @@
+// strategy charts referenced from: 
+// https://www.blackjackapprenticeship.com/blackjack-strategy-charts/
+// playerSum:dealerUp:correctAns
 const stratHardTotal = {
     5: {
         2: "hit",
@@ -192,202 +195,106 @@ const stratHardTotal = {
         "ace": "stand"
     },
 };
-
+// playerOtherCard (ace assumed):dealerUp:correctAns
 const stratSoftTotal = {
+    2: {
+        2:"hit",
+        3:"hit",
+        4:"hit",
+        5:"double",
+        6:"double",
+        7:"hit",
+        8:"hit",
+        9:"hit",
+        10:"hit",
+        "ace":"hit",
+    },
+    3: {
+        2:"hit",
+        3:"hit",
+        4:"hit",
+        5:"double",
+        6:"double",
+        7:"hit",
+        8:"hit",
+        9:"hit",
+        10:"hit",
+        "ace":"hit",
+    },
+    4: {
+        2:"hit",
+        3:"hit",
+        4:"double",
+        5:"double",
+        6:"double",
+        7:"hit",
+        8:"hit",
+        9:"hit",
+        10:"hit",
+        "ace":"hit",
+    },
     5: {
-        2: "hit",
-        3: "hit",
-        4: "hit",
-        5: "hit",
-        6: "hit",
-        7: "hit",
-        8: "hit",
-        9: "hit",
-        10: "hit",
-        "ace": "hit"
+        2:"hit",
+        3:"hit",
+        4:"double",
+        5:"double",
+        6:"double",
+        7:"hit",
+        8:"hit",
+        9:"hit",
+        10:"hit",
+        "ace":"hit",
     },
     6: {
-        2: "hit",
-        3: "hit",
-        4: "hit",
-        5: "hit",
-        6: "hit",
-        7: "hit",
-        8: "hit",
-        9: "hit",
-        10: "hit",
-        "ace": "hit"
+        2:"hit",
+        3:"double",
+        4:"double",
+        5:"double",
+        6:"double",
+        7:"hit",
+        8:"hit",
+        9:"hit",
+        10:"hit",
+        "ace":"hit",
     },
     7: {
-        2: "hit",
-        3: "hit",
-        4: "hit",
-        5: "hit",
-        6: "hit",
-        7: "hit",
-        8: "hit",
-        9: "hit",
-        10: "hit",
-        "ace": "hit"
+        2:"double",
+        3:"double",
+        4:"double",
+        5:"double",
+        6:"double",
+        7:"hit",
+        8:"hit",
+        9:"hit",
+        10:"hit",
+        "ace":"hit",
     },
     8: {
-        2: "hit",
-        3: "hit",
-        4: "hit",
-        5: "hit",
-        6: "hit",
-        7: "hit",
-        8: "hit",
-        9: "hit",
-        10: "hit",
-        "ace": "hit"
+        2:"stand",
+        3:"stand",
+        4:"stand",
+        5:"stand",
+        6:"double",
+        7:"stand",
+        8:"stand",
+        9:"stand",
+        10:"stand",
+        "ace":"stand",
     },
     9: {
-        2: "hit",
-        3: "double",
-        4: "double",
-        5: "double",
-        6: "double",
-        7: "hit",
-        8: "hit",
-        9: "hit",
-        10: "hit",
-        "ace": "hit"
-    },
-    10: {
-        2: "double",
-        3: "double",
-        4: "double",
-        5: "double",
-        6: "double",
-        7: "double",
-        8: "double",
-        9: "double",
-        10: "hit",
-        "ace": "hit"
-    },
-    11: {
-        2: "double",
-        3: "double",
-        4: "double",
-        5: "double",
-        6: "double",
-        7: "double",
-        8: "double",
-        9: "double",
-        10: "double",
-        "ace": "double"
-    },
-    12: {
-        2: "hit",
-        3: "hit",
-        4: "stand",
-        5: "stand",
-        6: "stand",
-        7: "hit",
-        8: "hit",
-        9: "hit",
-        10: "hit",
-        "ace": "hit"
-    },
-    13: {
-        2: "stand",
-        3: "stand",
-        4: "stand",
-        5: "stand",
-        6: "stand",
-        7: "hit",
-        8: "hit",
-        9: "hit",
-        10: "hit",
-        "ace": "hit"
-    },
-    14: {
-        2: "stand",
-        3: "stand",
-        4: "stand",
-        5: "stand",
-        6: "stand",
-        7: "hit",
-        8: "hit",
-        9: "hit",
-        10: "hit",
-        "ace": "hit"
-    },
-    15: {
-        2: "stand",
-        3: "stand",
-        4: "stand",
-        5: "stand",
-        6: "stand",
-        7: "hit",
-        8: "hit",
-        9: "hit",
-        10: "hit",
-        "ace": "hit"
-    },
-    16: {
-        2: "stand",
-        3: "stand",
-        4: "stand",
-        5: "stand",
-        6: "stand",
-        7: "hit",
-        8: "hit",
-        9: "hit",
-        10: "hit",
-        "ace": "hit"
-    },
-    17: {
-        2: "stand",
-        3: "stand",
-        4: "stand",
-        5: "stand",
-        6: "stand",
-        7: "stand",
-        8: "stand",
-        9: "stand",
-        10: "stand",
-        "ace": "stand"
-    },
-    18: {
-        2: "stand",
-        3: "stand",
-        4: "stand",
-        5: "stand",
-        6: "stand",
-        7: "stand",
-        8: "stand",
-        9: "stand",
-        10: "stand",
-        "ace": "stand"
-    },
-    19: {
-        2: "stand",
-        3: "stand",
-        4: "stand",
-        5: "stand",
-        6: "stand",
-        7: "stand",
-        8: "stand",
-        9: "stand",
-        10: "stand",
-        "ace": "stand"
-    },
-    20: {
-        2: "stand",
-        3: "stand",
-        4: "stand",
-        5: "stand",
-        6: "stand",
-        7: "stand",
-        8: "stand",
-        9: "stand",
-        10: "stand",
-        "ace": "stand"
+        2:"stand",
+        3:"stand",
+        4:"stand",
+        5:"stand",
+        6:"stand",
+        7:"stand",
+        8:"stand",
+        9:"stand",
+        10:"stand",
+        "ace":"stand",
     },
 };
-
+// playerPair:dealerUp:split (y or n)
 const stratPairs = {
     2: {
         2: "y",
@@ -577,12 +484,12 @@ function evalBlackjack(c1,c2){
 }
 
 function getChoice(pA,pB,dU){
-    console.log(`cards: ${pA}, ${pB}, ${dU}`)
     const choiceBtns = document.querySelectorAll(".choice-btn");
     choiceBtns.forEach(btn => {
         btn.addEventListener('click',function(){
             const choice = btn.getAttribute('data-choice');
-            console.log(choice);
+            const correct = evalChoice(pA,pB,dU,choice)
+            console.log(`correct: ${correct}`);
             fetch('/blackjack', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -590,19 +497,35 @@ function getChoice(pA,pB,dU){
                     player_a: pA,
                     player_b: pB,
                     dealer_up: dU,
+                    correct:correct
                 }),
             })
             .then(response => response.json())
             .then(result => {
                 console.log(result);
-                
+
             })
         })
     })
-    
-
 }
 
+function evalChoice(pA,pB,dU,choice){
+    // eval pairs
+    if(pA === pB){
+        const correctChoice = stratPairs[pA][dU];
+        return correctChoice === choice;
+    // eval soft totals
+    }else if (pA === 11 || pB === 11){
+        let sum = pA + pB;
+        const correctChoice = stratHardTotal[sum][dU];
+        return correctChoice === choice;
+    // eval hard totals
+    }else{
+        let sum = pA + pB;
+        const correctChoice = stratHardTotal[sum][dU];
+        return correctChoice === choice;
+    }
+}
 function toggleViews(actionList){
     for (let i = 0; i < actionList.length; i++) {
         let [view,action] = actionList[i];

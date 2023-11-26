@@ -85,6 +85,7 @@ def blackjack(request):
             player_a=data.get("player_a"),
             player_b=data.get("player_b"),
             dealer_up=data.get("dealer_up"),
+            correct=data.get("correct")
         )
         newHand.save()
         return JsonResponse({"message": "Hand captured successfully"}, status=201)

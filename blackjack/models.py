@@ -16,3 +16,4 @@ class Hand(models.Model):
     dealer_up = models.IntegerField()
     player_a = models.IntegerField()
     player_b = models.IntegerField()
+    correct = models.BooleanField()
