@@ -1,10 +1,12 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
-
-from .models import User
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import User, Hand
 
 
 def index(request):
@@ -66,6 +68,23 @@ def register(request):
         return render(request, "blackjack/register.html")
 
 
+@login_required
+@csrf_exempt
 def blackjack(request):
-    data = {"id": 1}
-    return render(request, "blackjack/blackjack.html")
+    #     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    # dealer_up = models.IntegerField()
+    # player_a = models.IntegerField()
+    # player_b = models.IntegerField()
+
+    if request.method == "GET":
+        return render(request, "blackjack/blackjack.html")
+    elif request.method == "POST":
+        data = json.loads(request.body)
+        newHand = Hand(
+            user=User.objects.get(id=request.user.id),
+            player_a=data.get("player_a"),
+            player_b=data.get("player_b"),
+            dealer_up=data.get("dealer_up"),
+        )
+        newHand.save()
+        return JsonResponse({"message:Hand captured successfully"}, status=201)

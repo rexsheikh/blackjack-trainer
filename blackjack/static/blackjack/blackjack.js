@@ -551,7 +551,7 @@ function deal(){
                 document.getElementById('player-cards').appendChild(cardEl);
                 playerCards.push(card);
             }else{
-                if(i === 0){
+                if(i === 1){
                     dealerUp = card;
                 }
                 dealerCards.push(card);
@@ -562,7 +562,8 @@ function deal(){
         document.getElementById('bet-view').style.display = 'none';
         document.getElementById('deal-view').style.display = 'block';
         evalBlackjack(...playerCards) ? console.log('win!') : toggleViews([['choice-view',1]]);
-        evalBlackjack(...dealerCards) ? console.log('lose!') : toggleViews([['choice-view',1]]) ;
+        evalBlackjack(...dealerCards) ? console.log('lose!') : toggleViews([['choice-view',1]]);
+        getChoice(...playerCards,dealerUp);
     })    
 }
 
@@ -575,7 +576,25 @@ function evalBlackjack(c1,c2){
     return c1 + c2 == 21 ? true : false;
 }
 
-function showChoiceBtns(){
+function getChoice(pA,pB,dU){
+    console.log(`cards: ${pA}, ${pB}, ${dU}`)
+    const choiceBtns = document.querySelectorAll(".choice-btn");
+    choiceBtns.forEach(btn => {
+        btn.addEventListener('click',function(){
+            const choice = btn.getAttribute('data-choice');
+            console.log(choice);
+            fetch('/blackjack', {
+                method: 'POST',
+                body: JSON.stringify({
+                    choice: choice,
+                    player_a: pA,
+                    player_b: pB,
+                    dealer_up: dU,
+                }),
+            })
+        })
+    })
+    
 
 }
 
