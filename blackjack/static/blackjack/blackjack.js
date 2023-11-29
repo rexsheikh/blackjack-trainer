@@ -10,6 +10,9 @@
 // using reduce to sum a list:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce
 
+// removing all children of a node:
+// https://www.javascripttutorial.net/dom/manipulating/remove-all-child-nodes/
+
 // playerSum:dealerUp:correctAns
 const stratHardTotal = {
   5: {
@@ -448,11 +451,20 @@ function resetGameState() {
   gameState.playerWin = false;
   gameState.dealerWin = false;
   gameState.playerBust = [];
-  gameState.playerBust = [];
+  gameState.dealerBust = [];
   gameState.totalBet = 0;
+  const playerCardDiv = document.getElementById("player-cards");
+  const dealerCardDiv = document.getElementById("dealer-cards");
+  while (playerCardDiv.firstChild) {
+    playerCardDiv.removeChild(playerCardDiv.firstChild);
+  }
+  while (dealerCardDiv.firstChild) {
+    dealerCardDiv.removeChild(dealerCardDiv.firstChild);
+  }
 }
 function playBlackJack() {
   resetGameState();
+  toggleViews([["bet-view", 1]]);
   bet();
   getCards();
   showDeal();
@@ -526,13 +538,11 @@ function getChoice(playerCards, dealerCards) {
   let pA = playerCards[0];
   let pB = playerCards[1];
   let dU = dealerCards[0];
-  console.log(`player cards: ${pA} / ${pB} dealerUp: ${dU}`);
   choiceBtns.forEach((btn) => {
     btn.addEventListener("click", function () {
       const choice = btn.getAttribute("data-choice");
       //   need a check here for greater than two cards and probobaly some other checks too
       const correct = evalChoice(pA, pB, dU, choice);
-      console.log(`correct: ${correct}`);
       fetch("/blackjack", {
         method: "POST",
         body: JSON.stringify({
@@ -581,12 +591,21 @@ function toggleViews(actionList) {
 }
 
 function doChoice(choice) {
+  toggleViews([["choice-view", 0]]);
   if (choice === "hit") {
     let card = getRandomCard();
-    console.log(`new card: ${card}`);
     gameState.playerCards.push(card);
     let cardEl = document.createElement("h2");
     cardEl.innerHTML = card;
     document.getElementById("player-cards").appendChild(cardEl);
+    if (evalSum(gameState.playerCards) === "blackjack") {
+      console.log("win!");
+      playBlackJack();
+    } else if (evalSum(gameState.playerCards) === "bust") {
+      console.log("lose");
+      playBlackJack();
+    } else {
+      toggleViews([["choice-view", 1]]);
+    }
   }
 }
