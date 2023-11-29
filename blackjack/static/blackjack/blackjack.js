@@ -438,6 +438,8 @@ const gameState = {
   playerBust: false,
   dealerBust: false,
   totalBet: 0,
+  splitHands: [],
+  splitIdx: 0,
 };
 const cards = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
@@ -445,6 +447,7 @@ document.addEventListener("DOMContentLoaded", function () {
   console.log("dom loaded...");
   playBlackJack();
 });
+
 function resetGameState() {
   gameState.playerCards = [];
   gameState.dealerCards = [];
@@ -466,7 +469,7 @@ function playBlackJack() {
   resetGameState();
   toggleViews([["bet-view", 1]]);
   bet();
-  getCards();
+  firstDeal();
   showDeal();
   getChoice(gameState.playerCards, gameState.dealerCards);
 }
@@ -496,27 +499,34 @@ function showDeal() {
   });
 }
 
-function getCards() {
+function firstDeal() {
   for (let i = 0; i < 4; i++) {
-    let card = getRandomCard();
-    let cardEl = document.createElement("h2");
-    cardEl.innerHTML = card;
+    let cardVal = getRandomCard();
+    // let cardEl = document.createElement("h2");
+    // cardEl.innerHTML = card;
     if (i % 2 == 0) {
-      document.getElementById("player-cards").appendChild(cardEl);
-      gameState.playerCards.push(card);
+      // document.getElementById("player-cards").appendChild(cardEl);
+      buildAssignCard(cardVal, "player-cards");
+      gameState.playerCards.push(cardVal);
     } else {
       if (i === 1) {
-        dealerUp = card;
+        dealerUp = cardVal;
       }
-      gameState.dealerCards.push(card);
-      document.getElementById("dealer-cards").appendChild(cardEl);
+      gameState.dealerCards.push(cardVal);
+      buildAssignCard(cardVal, "dealer-cards");
     }
   }
 }
 
+function buildAssignCard(cardVal, placement) {
+  let cardEl = document.createElement("h2");
+  cardEl.innerHTML = cardVal;
+  document.getElementById(placement).appendChild(cardEl);
+}
 function getRandomCard() {
   let idx = Math.floor(Math.random() * cards.length);
-  return cards[idx];
+  let cardVal = cards[idx];
+  return cardVal;
 }
 
 function evalSum(cards) {
@@ -541,7 +551,6 @@ function getChoice(playerCards, dealerCards) {
   choiceBtns.forEach((btn) => {
     btn.addEventListener("click", function () {
       const choice = btn.getAttribute("data-choice");
-      //   need a check here for greater than two cards and probobaly some other checks too
       const correct = evalChoice(pA, pB, dU, choice);
       fetch("/blackjack", {
         method: "POST",
@@ -593,11 +602,20 @@ function toggleViews(actionList) {
 function doChoice(choice) {
   toggleViews([["choice-view", 0]]);
   if (choice === "hit") {
-    let card = getRandomCard();
-    gameState.playerCards.push(card);
-    let cardEl = document.createElement("h2");
-    cardEl.innerHTML = card;
-    document.getElementById("player-cards").appendChild(cardEl);
+    if (gameState.splitHands.length > 0) {
+      let cardVal = getRandomCard();
+      gameState.splitHands.push(cardVal);
+      let currHand =
+        document.getElementById("split-container").firstElementChild;
+      let cardEl = document.createElement("h2");
+      cardEl.innerHTML = cardVal;
+      currHand.appendChild(cardEl);
+    } else {
+      let cardVal = getRandomCard();
+      gameState.playerCards.push(cardVal);
+      buildAssignCard(cardVal, "player-cards");
+    }
+
     if (evalSum(gameState.playerCards) === "blackjack") {
       console.log("win!");
       playBlackJack();
@@ -607,5 +625,25 @@ function doChoice(choice) {
     } else {
       toggleViews([["choice-view", 1]]);
     }
+  } else if (choice === "split") {
+    let splitA = gameState.playerCards[0];
+    let splitB = gameState.playerCards[1];
+    gameState.splitHands.push([splitA]);
+    gameState.splitHands.push([splitB]);
+    //create initial split hands
+    let splitEls = `<div class="container">
+      <div class="row" id = "split-container">
+        <div class="col-md-6">
+            <h2>${splitA}</h2>
+        </div>
+        <div class="col-md-6">
+          <h2>${splitB}</h2>
+        </div>
+      </div>
+    </div>`;
+
+    document.getElementById("player-cards").innerHTML = splitEls;
+
+    toggleViews([["choice-view", 1]]);
   }
 }
