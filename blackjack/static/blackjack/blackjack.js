@@ -439,7 +439,6 @@ const gameState = {
   dealerBust: false,
   totalBet: 0,
   splitHands: [],
-  splitIdx: 0,
 };
 const cards = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
@@ -449,6 +448,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function resetGameState() {
+  console.log("reset game state...");
   gameState.playerCards = [];
   gameState.dealerCards = [];
   gameState.playerWin = false;
@@ -466,6 +466,7 @@ function resetGameState() {
   }
 }
 function playBlackJack() {
+  console.log("playBlackJack...");
   resetGameState();
   toggleViews([["bet-view", 1]]);
   bet();
@@ -475,6 +476,7 @@ function playBlackJack() {
 }
 
 function bet() {
+  console.log("bet...");
   toggleViews([
     ["deal-view", 0],
     ["choice-view", 0],
@@ -490,6 +492,7 @@ function bet() {
 }
 
 function showDeal() {
+  console.log("showDeal...");
   document.querySelector(".deal-btn").addEventListener("click", function () {
     toggleViews([
       ["bet-view", 0],
@@ -500,6 +503,7 @@ function showDeal() {
 }
 
 function firstDeal() {
+  console.log("firstDeal...");
   for (let i = 0; i < 4; i++) {
     let cardVal = getRandomCard();
     // let cardEl = document.createElement("h2");
@@ -519,6 +523,7 @@ function firstDeal() {
 }
 
 function buildAssignCard(cardVal, placement) {
+  console.log("buildAssignCard...");
   let cardEl = document.createElement("h2");
   cardEl.innerHTML = cardVal;
   document.getElementById(placement).appendChild(cardEl);
@@ -530,6 +535,7 @@ function getRandomCard() {
 }
 
 function evalSum(cards) {
+  console.log("evalSum...");
   let sum = cards.reduce(
     (accumulator, currentValue) => accumulator + currentValue,
     0
@@ -544,12 +550,14 @@ function evalSum(cards) {
 }
 
 function getChoice(playerCards, dealerCards) {
+  console.log("getChoice...");
   const choiceBtns = document.querySelectorAll(".choice-btn");
   let pA = playerCards[0];
   let pB = playerCards[1];
   let dU = dealerCards[0];
   choiceBtns.forEach((btn) => {
-    btn.addEventListener("click", function () {
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
       const choice = btn.getAttribute("data-choice");
       const correct = evalChoice(pA, pB, dU, choice);
       fetch("/blackjack", {
@@ -566,12 +574,18 @@ function getChoice(playerCards, dealerCards) {
         .then((result) => {
           console.log(result);
           doChoice(choice);
+          if (gameState.splitHands.length > 0) {
+            let currHand =
+              document.getElementById("split-container").firstElementChild;
+            currHand.style.border = "2px solid red";
+          }
         });
     });
   });
 }
 
 function evalChoice(pA, pB, dU, choice) {
+  console.log("evalChoice...");
   // eval pairs
   if (pA === pB) {
     const correctChoice = stratPairs[pA][dU];
@@ -600,50 +614,30 @@ function toggleViews(actionList) {
 }
 
 function doChoice(choice) {
+  console.log(`doChoice...${choice}`);
   toggleViews([["choice-view", 0]]);
   if (choice === "hit") {
-    if (gameState.splitHands.length > 0) {
-      let cardVal = getRandomCard();
-      gameState.splitHands.push(cardVal);
-      let currHand =
-        document.getElementById("split-container").firstElementChild;
-      let cardEl = document.createElement("h2");
-      cardEl.innerHTML = cardVal;
-      currHand.appendChild(cardEl);
-    } else {
-      let cardVal = getRandomCard();
-      gameState.playerCards.push(cardVal);
-      buildAssignCard(cardVal, "player-cards");
-    }
-
-    if (evalSum(gameState.playerCards) === "blackjack") {
-      console.log("win!");
-      playBlackJack();
-    } else if (evalSum(gameState.playerCards) === "bust") {
-      console.log("lose");
-      playBlackJack();
-    } else {
-      toggleViews([["choice-view", 1]]);
-    }
+    let cardVal = getRandomCard();
+    gameState.playerCards.push(cardVal);
+    buildAssignCard(cardVal, "player-cards");
   } else if (choice === "split") {
-    let splitA = gameState.playerCards[0];
-    let splitB = gameState.playerCards[1];
-    gameState.splitHands.push([splitA]);
-    gameState.splitHands.push([splitB]);
-    //create initial split hands
-    let splitEls = `<div class="container">
+    gameState.splitHands.push([gameState.playerCards[0], getRandomCard()]);
+    gameState.splitHands.push([gameState.playerCards[1]]);
+    console.log(
+      `split hands initialize: ${JSON.stringify(gameState.splitHands)}`
+    );
+    document.getElementById("player-cards").innerHTML = `
+    <div class="container">
       <div class="row" id = "split-container">
         <div class="col-md-6">
-            <h2>${splitA}</h2>
+            <h2>${gameState.splitHands[0][0]}</h2>
+            <h2>${gameState.splitHands[0][1]}</h2>
         </div>
         <div class="col-md-6">
-          <h2>${splitB}</h2>
+            <h2>${gameState.splitHands[1][0]}</h2>
         </div>
       </div>
     </div>`;
-
-    document.getElementById("player-cards").innerHTML = splitEls;
-
     toggleViews([["choice-view", 1]]);
   }
 }
