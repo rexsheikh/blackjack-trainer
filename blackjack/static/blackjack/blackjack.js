@@ -662,14 +662,8 @@ function dealerActionLoop() {
   // if not dealer flip second
   // check
   console.log(`dealer hand: ${JSON.stringify(gameState.dealerCards)}`);
-  dealerHit()
-    .then(() => evalDealerHand(gameState.dealerCards))
-    .then((result) => {
-      console.log(result);
-      return result;
-    })
-    .then(() => evalDealerHand())
-    .then((result) => console.log(result));
+  const res = evalDealerHand(gameState.dealerCards);
+  console.log(res);
 }
 
 function dealerHit() {
@@ -680,15 +674,14 @@ function dealerHit() {
 }
 function evalDealerHand(cards) {
   const handState = getSumDealer(cards);
-  if (handState != "hit") {
-    return handState;
-  } else {
-    return dealerHit();
-  }
+  return handState;
 }
-function getSumDealer() {
+function getSumDealer(cards) {
   console.log("getSumDealer...");
-  let sum;
+  let sum = cards.reduce(
+    (accumulator, currentValue) => accumulator + currentValue,
+    0
+  );
   if (sum === 21) {
     sum = "blackjack";
   } else if (sum > 21) {
