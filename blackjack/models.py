@@ -17,3 +17,24 @@ class Hand(models.Model):
     player_a = models.IntegerField()
     player_b = models.IntegerField()
     correct = models.BooleanField()
+
+
+class hardTotal(models.Model):
+    id = models.IntegerField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    hard_total = models.IntegerField()
+    dealer_up = models.IntegerField()
+
+
+class softTotal(models.Model):
+    id = models.IntegerField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    not_ace = models.IntegerField()
+    dealer_up = models.IntegerField()
+
+
+class pair(models.Model):
+    id = models.IntegerField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    pair = models.IntegerField()
+    dealer_up = models.IntegerField()

@@ -556,6 +556,24 @@ function getChoice(playerCards, dealerCards) {
   console.log("getChoice...");
   toggleViews[["choice-view", 1]];
   const choiceBtns = document.querySelectorAll(".choice-btn");
+  if (playerCards.length === 2) {
+    if (playerCards.includes(11)) {
+      // soft total eval
+    } else if (playerCards[0] === playerCards[1]) {
+      // pair eval
+    } else {
+      // hard total eval
+    }
+  } else {
+    // hard total eval
+  }
+  if (playerCards.includes(11) && playerCards.length === 2) {
+    // this is the first deal and one of the cards is an ace. after a hit, hands with aces are treated as hard totals.
+  } else if (playerCards[0] === playerCards[1] && playerCards.length === 2) {
+    //this is the first deal and both of the cards are the same
+  } else {
+    //this is a hard total
+  }
   let pA = playerCards[0];
   let pB = playerCards[1];
   let dU = dealerCards[0];
@@ -583,11 +601,6 @@ function getChoice(playerCards, dealerCards) {
         .then((result) => {
           console.log(result);
           doChoice(choice);
-          if (gameState.splitHands.length > 0) {
-            let currHand =
-              document.getElementById("split-container").firstElementChild;
-            currHand.style.border = "2px solid red";
-          }
         });
     });
   });
@@ -625,12 +638,7 @@ function toggleViews(actionList) {
 function doChoice(choice) {
   console.log(`doChoice...${choice}`);
   if (choice === "hit") {
-    let cardVal = getRandomCard();
-    gameState.playerCards.push(cardVal);
-    buildAssignCard(cardVal, "player-cards");
-    evalSum(gameState.playerCards) === "safeSum"
-      ? getChoice(gameState.playerCards, gameState.dealerCards)
-      : console.log(evalSum(gameState.playerCards));
+    hit();
   } else if (choice === "split") {
     gameState.splitHands.push([gameState.playerCards[0], getRandomCard()]);
     gameState.splitHands.push([gameState.playerCards[1]]);
@@ -650,4 +658,14 @@ function doChoice(choice) {
       </div>
     </div>`;
   }
+  getChoice(gameState.splitHands, gameState.dealerCards);
 }
+function hit() {
+  let cardVal = getRandomCard();
+  gameState.playerCards.push(cardVal);
+  buildAssignCard(cardVal, "player-cards");
+  evalSum(gameState.playerCards) === "safeSum"
+    ? getChoice(gameState.playerCards, gameState.dealerCards)
+    : playBlackJack();
+}
+function doSplit() {}
