@@ -658,6 +658,7 @@ function doChoice(choice) {
       </div>
       `;
     }
+    splitQueue();
   }
 }
 function hit() {
@@ -669,4 +670,10 @@ function hit() {
     : playBlackJack();
 }
 
-function splitQueue() {}
+function splitQueue() {
+  for (let idx = 0; idx < gameState.playerCards.length; idx++) {
+    console.log(`split queue at idx: ${idx}`);
+    let currHand = gameState.playerCards[idx];
+    getChoice(currHand, gameState.dealerCards);
+  }
+}
