@@ -13,6 +13,9 @@
 // removing all children of a node:
 // https://www.javascripttutorial.net/dom/manipulating/remove-all-child-nodes/
 
+// removing event listeners with clone node and replace child
+// https://stackoverflow.com/questions/9251837/how-to-remove-all-listeners-in-an-element
+
 // playerSum:dealerUp:correctAns
 const stratHardTotal = {
   5: {
@@ -551,15 +554,21 @@ function evalSum(cards) {
 
 function getChoice(playerCards, dealerCards) {
   console.log("getChoice...");
+  toggleViews[["choice-view", 1]];
   const choiceBtns = document.querySelectorAll(".choice-btn");
   let pA = playerCards[0];
   let pB = playerCards[1];
   let dU = dealerCards[0];
   choiceBtns.forEach((btn) => {
-    btn.addEventListener("click", function (e) {
+    // Create a clone of each button to remove existing event listeners
+    const cloneBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(cloneBtn, btn);
+
+    cloneBtn.addEventListener("click", function (e) {
       e.stopPropagation();
-      const choice = btn.getAttribute("data-choice");
+      const choice = cloneBtn.getAttribute("data-choice");
       const correct = evalChoice(pA, pB, dU, choice);
+
       fetch("/blackjack", {
         method: "POST",
         body: JSON.stringify({
@@ -615,11 +624,13 @@ function toggleViews(actionList) {
 
 function doChoice(choice) {
   console.log(`doChoice...${choice}`);
-  toggleViews([["choice-view", 0]]);
   if (choice === "hit") {
     let cardVal = getRandomCard();
     gameState.playerCards.push(cardVal);
     buildAssignCard(cardVal, "player-cards");
+    evalSum(gameState.playerCards) === "safeSum"
+      ? getChoice(gameState.playerCards, gameState.dealerCards)
+      : console.log(evalSum(gameState.playerCards));
   } else if (choice === "split") {
     gameState.splitHands.push([gameState.playerCards[0], getRandomCard()]);
     gameState.splitHands.push([gameState.playerCards[1]]);
@@ -638,6 +649,5 @@ function doChoice(choice) {
         </div>
       </div>
     </div>`;
-    toggleViews([["choice-view", 1]]);
   }
 }
