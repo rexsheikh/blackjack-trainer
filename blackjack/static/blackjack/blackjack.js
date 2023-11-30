@@ -16,6 +16,12 @@
 // removing event listeners with clone node and replace child
 // https://stackoverflow.com/questions/9251837/how-to-remove-all-listeners-in-an-element
 
+// keep track of player turn using variables (in this context, I am using gamestate)
+// https://stackoverflow.com/questions/56508951/how-do-i-keep-track-of-players-turn-in-game
+
+// using promises to chain events (specifically using then)
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises
+
 // playerSum:dealerUp:correctAns
 const stratHardTotal = {
   5: {
@@ -452,6 +458,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function resetGameState() {
   console.log("reset game state...");
+  toggleViews([
+    ["bet-view", 1],
+    ["choice-view", 0],
+  ]);
   gameState.playerCards = [];
   gameState.dealerCards = [];
   gameState.playerWin = false;
@@ -495,7 +505,6 @@ function bet() {
 }
 
 function showDeal() {
-  console.log("showDeal...");
   document.querySelector(".deal-btn").addEventListener("click", function () {
     toggleViews([
       ["bet-view", 0],
@@ -509,10 +518,7 @@ function firstDeal() {
   console.log("firstDeal...");
   for (let i = 0; i < 4; i++) {
     let cardVal = getRandomCard();
-    // let cardEl = document.createElement("h2");
-    // cardEl.innerHTML = card;
     if (i % 2 == 0) {
-      // document.getElementById("player-cards").appendChild(cardEl);
       buildAssignCard(cardVal, "player-cards");
       gameState.playerCards.push(cardVal);
     } else {
@@ -552,28 +558,10 @@ function evalSum(cards) {
   }
 }
 
-function getChoice(playerCards, dealerCards) {
+async function getChoice(playerCards, dealerCards) {
   console.log("getChoice...");
-  toggleViews[["choice-view", 1]];
+  // toggleViews([["choice-view", 1]]);
   const choiceBtns = document.querySelectorAll(".choice-btn");
-  if (playerCards.length === 2) {
-    if (playerCards.includes(11)) {
-      // soft total eval
-    } else if (playerCards[0] === playerCards[1]) {
-      // pair eval
-    } else {
-      // hard total eval
-    }
-  } else {
-    // hard total eval
-  }
-  if (playerCards.includes(11) && playerCards.length === 2) {
-    // this is the first deal and one of the cards is an ace. after a hit, hands with aces are treated as hard totals.
-  } else if (playerCards[0] === playerCards[1] && playerCards.length === 2) {
-    //this is the first deal and both of the cards are the same
-  } else {
-    //this is a hard total
-  }
   let pA = playerCards[0];
   let pB = playerCards[1];
   let dU = dealerCards[0];
@@ -670,10 +658,58 @@ function hit() {
     : playBlackJack();
 }
 
-function splitQueue() {
+function dealerTurn() {}
+
+function stand() {
+  // it is now the dealer's turn. hit until 17 or greater, blackjack or bust
+}
+
+function double() {
+  // double bet. deal one more card. then dealer's turn.
+}
+
+async function splitQueue() {
   for (let idx = 0; idx < gameState.playerCards.length; idx++) {
-    console.log(`split queue at idx: ${idx}`);
-    let currHand = gameState.playerCards[idx];
-    getChoice(currHand, gameState.dealerCards);
+    const playHand = getChoice(
+      gameState.playerCards[idx],
+      gameState.dealerCards
+    );
+    await playHand;
   }
 }
+
+// **potential template for split**
+// function conditionalRepeat(steps) {
+//   let currentStep = 1;
+
+//   function performStep() {
+//     return new Promise((resolve) => {
+//       // Simulating an asynchronous operation
+//       console.log(`Step ${currentStep} completed`);
+//       currentStep++;
+//       resolve();
+//     });
+//   }
+
+//   function repeat() {
+//     if (currentStep <= steps) {
+//       performStep().then(() => {
+//         repeat();
+//       });
+//     } else {
+//       console.log("All steps completed!");
+//     }
+//   }
+
+//   const startButton = document.getElementById("startButton");
+
+//   if (startButton) {
+//     startButton.addEventListener("click", () => {
+//       currentStep = 1;
+//       repeat();
+//     });
+//   }
+// }
+
+// // Example usage: Repeat 3 steps on button click
+// conditionalRepeat(3);
