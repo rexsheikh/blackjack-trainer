@@ -447,7 +447,7 @@ const gameState = {
   playerBust: false,
   dealerBust: false,
   totalBet: 0,
-  splitHands: [],
+  playerTurn: true,
 };
 const cards = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
@@ -478,14 +478,14 @@ function resetGameState() {
     dealerCardDiv.removeChild(dealerCardDiv.firstChild);
   }
 }
-function playBlackJack() {
+async function playBlackJack() {
   console.log("playBlackJack...");
   resetGameState();
   toggleViews([["bet-view", 1]]);
   bet();
   firstDeal();
   showDeal();
-  getChoice(gameState.playerCards, gameState.dealerCards);
+  playerActionLoop().then(() => dealerActionLoop());
 }
 
 function bet() {
@@ -513,7 +513,19 @@ function showDeal() {
     ]);
   });
 }
-
+function playerActionLoop() {
+  return getChoice(gameState.playerCards, gameState.dealerCards)
+    .then((choice) => {
+      return doChoice(choice);
+    })
+    .then(() => {
+      evalHand(gameState.playerCards);
+    })
+    .then((result) => {
+      console.log(result);
+      return result;
+    });
+}
 function firstDeal() {
   console.log("firstDeal...");
   for (let i = 0; i < 4; i++) {
@@ -543,56 +555,44 @@ function getRandomCard() {
   return cardVal;
 }
 
-function evalSum(cards) {
-  console.log("evalSum...");
-  let sum = cards.reduce(
-    (accumulator, currentValue) => accumulator + currentValue,
-    0
-  );
-  if (sum === 21) {
-    return "blackjack";
-  } else if (sum > 21) {
-    return "bust";
-  } else {
-    return "safeSum";
-  }
-}
-
-async function getChoice(playerCards, dealerCards) {
+// either dealer or player cards passed
+function getChoice(playerCards, dealerCards) {
   console.log("getChoice...");
   const choiceBtns = document.querySelectorAll(".choice-btn");
   let pA = playerCards[0];
   let pB = playerCards[1];
   let dU = dealerCards[0];
-  choiceBtns.forEach((btn) => {
-    // Create a clone of each button to remove existing event listeners
-    const cloneBtn = btn.cloneNode(true);
-    btn.parentNode.replaceChild(cloneBtn, btn);
+  return new Promise((resolve) => {
+    choiceBtns.forEach((btn) => {
+      // Create a clone of each button to remove existing event listeners
+      const cloneBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(cloneBtn, btn);
 
-    cloneBtn.addEventListener("click", function () {
-      const choice = cloneBtn.getAttribute("data-choice");
-      const correct = evalChoice(pA, pB, dU, choice);
+      cloneBtn.addEventListener("click", function () {
+        const choice = cloneBtn.getAttribute("data-choice");
+        const correct = determineCorrect(pA, pB, dU, choice);
 
-      fetch("/blackjack", {
-        method: "POST",
-        body: JSON.stringify({
-          choice: choice,
-          player_a: pA,
-          player_b: pB,
-          dealer_up: dU,
-          correct: correct,
-        }),
-      })
-        .then((response) => response.json())
-        .then((result) => {
-          console.log(result);
-          doChoice(choice);
-        });
+        fetch("/blackjack", {
+          method: "POST",
+          body: JSON.stringify({
+            choice: choice,
+            player_a: pA,
+            player_b: pB,
+            dealer_up: dU,
+            correct: correct,
+          }),
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            console.log(result);
+            resolve(choice);
+          });
+      });
     });
   });
 }
 
-function evalChoice(pA, pB, dU, choice) {
+function determineCorrect(pA, pB, dU, choice) {
   console.log("evalChoice...");
   // eval pairs
   if (pA === pB) {
@@ -644,18 +644,81 @@ function doChoice(choice) {
       </div>
       `;
     }
-    splitQueue();
   }
+  return Promise.resolve("choice complete");
+}
+
+function evalHand(cards) {
+  const handState = getSumPlayer(cards);
+  if (gameState.playerTurn && handState != "safeSum") {
+    return Promise.resolve("dealerTurn");
+  } else {
+    return playerActionLoop();
+  }
+}
+
+function dealerActionLoop() {
+  // after deal, need to see if dealer has blackjack
+  // if not dealer flip second
+  // check
+  console.log(`dealer hand: ${JSON.stringify(gameState.dealerCards)}`);
+  dealerHit()
+    .then(() => evalDealerHand(gameState.dealerCards))
+    .then((result) => {
+      console.log(result);
+      return result;
+    })
+    .then(() => evalDealerHand())
+    .then((result) => console.log(result));
+}
+
+function dealerHit() {
+  let cardVal = getRandomCard();
+  gameState.dealerCards.push(cardVal);
+  buildAssignCard(cardVal, "dealer-cards");
+  return Promise.resolve("hit complete");
+}
+function evalDealerHand(cards) {
+  const handState = getSumDealer(cards);
+  if (handState != "hit") {
+    return handState;
+  } else {
+    return dealerHit();
+  }
+}
+function getSumDealer() {
+  console.log("getSumDealer...");
+  let sum;
+  if (sum === 21) {
+    sum = "blackjack";
+  } else if (sum > 21) {
+    sum = "bust";
+  } else if (sum < 17 || (gameState.dealerCards.includes(11) && sum === 17)) {
+    sum = "hit";
+  } else {
+    sum = "stand";
+  }
+  return sum;
 }
 function hit() {
   let cardVal = getRandomCard();
   gameState.playerCards.push(cardVal);
   buildAssignCard(cardVal, "player-cards");
-  evalSum(gameState.playerCards) === "safeSum"
-    ? getChoice(gameState.playerCards, gameState.dealerCards)
-    : playBlackJack();
 }
-
+function getSumPlayer(cards) {
+  console.log("getSumPlayer...");
+  let sum = cards.reduce(
+    (accumulator, currentValue) => accumulator + currentValue,
+    0
+  );
+  if (sum === 21) {
+    return "blackjack";
+  } else if (sum > 21) {
+    return "bust";
+  } else {
+    return "safeSum";
+  }
+}
 function dealerTurn() {}
 
 function stand() {
@@ -709,59 +772,66 @@ function conditionalRepeat(steps) {
   }
 }
 
-// Example usage: Repeat 3 steps on button click
-conditionalRepeat(3);
+// // Example usage: Repeat 3 steps on button click
+// conditionalRepeat(3);
 
-function doSomething() {
-  // Simulating a synchronous operation
-  const result = "First result";
-  console.log(`Step 1: ${result}`);
-  return Promise.resolve(result);
-}
+// // chaining promises example
+// function doSomething() {
+//   // Simulating a synchronous operation
+//   const result = "First result";
+//   console.log(`Step 1: ${result}`);
+//   return Promise.resolve(result);
+// }
 
-function doSomethingElse(previousResult) {
-  // Simulating a synchronous operation
-  const newResult = `${previousResult}, Second result`;
-  console.log(`Step 2: ${newResult}`);
-  return Promise.resolve(newResult);
-}
+// function doSomethingElse(previousResult) {
+//   // Simulating a synchronous operation
+//   const newResult = `${previousResult}, Second result`;
+//   console.log(`Step 2: ${newResult}`);
+//   return Promise.resolve(newResult);
+// }
 
-function doThirdThing(previousResult) {
-  // Simulating a synchronous operation
-  const finalResult = `${previousResult}, Third result`;
-  console.log(`Step 3: ${finalResult}`);
-  return Promise.resolve(finalResult);
-}
+// function doThirdThing(previousResult) {
+//   // Simulating a synchronous operation
+//   const finalResult = `${previousResult}, Third result`;
 
-function getUserResponse() {
-  return new Promise((resolve) => {
-    // Simulating user input with a button click
-    const button = document.getElementById("userButton");
+//   // Simulating evaluation and decision
+//   const shouldStartOver = confirm("Do you want to start over the loop?");
+//   if (shouldStartOver) {
+//     console.log("Starting over the loop...");
+//     return doSomething(); // Start over the loop
+//   } else {
+//     console.log(`Loop completed with result: ${finalResult}`);
+//     return Promise.resolve(finalResult);
+//   }
+// }
 
-    if (button) {
-      button.addEventListener("click", () => {
-        const userInput = prompt("Enter something:");
-        resolve(userInput);
-      });
-    } else {
-      resolve("Default user input");
-    }
-  });
-}
+// function getUserResponse() {
+//   return new Promise((resolve) => {
+//     // Simulating user input with a button click
+//     const button = document.getElementById("userButton");
 
-function failureCallback(error) {
-  console.error(`Something went wrong: ${error}`);
-}
+//     if (button) {
+//       button.addEventListener("click", () => {
+//         const userInput = prompt("Enter something:");
+//         resolve(userInput);
+//       });
+//     } else {
+//       resolve("Default user input");
+//     }
+//   });
+// }
 
-// Usage of the promises chain
-doSomething()
-  .then((result) => doSomethingElse(result))
-  .then((newResult) =>
-    getUserResponse().then(
-      (userInput) => `${newResult}, User input: ${userInput}`
-    )
-  )
-  .then((finalResult) => {
-    console.log(`Got the final result: ${finalResult}`);
-  })
-  .catch(failureCallback);
+// function failureCallback(error) {
+//   console.error(`Something went wrong: ${error}`);
+// }
+
+// // Initial usage of the promises chain
+// doSomething()
+//   .then((result) => doSomethingElse(result))
+//   .then((newResult) =>
+//     getUserResponse().then(
+//       (userInput) => `${newResult}, User input: ${userInput}`
+//     )
+//   )
+//   .then((finalResult) => doThirdThing(finalResult))
+//   .catch(failureCallback);
