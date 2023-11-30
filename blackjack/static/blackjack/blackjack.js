@@ -560,7 +560,6 @@ function evalSum(cards) {
 
 async function getChoice(playerCards, dealerCards) {
   console.log("getChoice...");
-  // toggleViews([["choice-view", 1]]);
   const choiceBtns = document.querySelectorAll(".choice-btn");
   let pA = playerCards[0];
   let pB = playerCards[1];
@@ -570,8 +569,7 @@ async function getChoice(playerCards, dealerCards) {
     const cloneBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(cloneBtn, btn);
 
-    cloneBtn.addEventListener("click", function (e) {
-      e.stopPropagation();
+    cloneBtn.addEventListener("click", function () {
       const choice = cloneBtn.getAttribute("data-choice");
       const correct = evalChoice(pA, pB, dU, choice);
 
@@ -678,38 +676,92 @@ async function splitQueue() {
   }
 }
 
-// **potential template for split**
-// function conditionalRepeat(steps) {
-//   let currentStep = 1;
+// **potential templates for split**
+function conditionalRepeat(steps) {
+  let currentStep = 1;
 
-//   function performStep() {
-//     return new Promise((resolve) => {
-//       // Simulating an asynchronous operation
-//       console.log(`Step ${currentStep} completed`);
-//       currentStep++;
-//       resolve();
-//     });
-//   }
+  function performStep() {
+    return new Promise((resolve) => {
+      // Simulating an asynchronous operation
+      console.log(`Step ${currentStep} completed`);
+      currentStep++;
+      resolve();
+    });
+  }
 
-//   function repeat() {
-//     if (currentStep <= steps) {
-//       performStep().then(() => {
-//         repeat();
-//       });
-//     } else {
-//       console.log("All steps completed!");
-//     }
-//   }
+  function repeat() {
+    if (currentStep <= steps) {
+      performStep().then(() => {
+        repeat();
+      });
+    } else {
+      console.log("All steps completed!");
+    }
+  }
 
-//   const startButton = document.getElementById("startButton");
+  const startButton = document.getElementById("startButton");
 
-//   if (startButton) {
-//     startButton.addEventListener("click", () => {
-//       currentStep = 1;
-//       repeat();
-//     });
-//   }
-// }
+  if (startButton) {
+    startButton.addEventListener("click", () => {
+      currentStep = 1;
+      repeat();
+    });
+  }
+}
 
-// // Example usage: Repeat 3 steps on button click
-// conditionalRepeat(3);
+// Example usage: Repeat 3 steps on button click
+conditionalRepeat(3);
+
+function doSomething() {
+  // Simulating a synchronous operation
+  const result = "First result";
+  console.log(`Step 1: ${result}`);
+  return Promise.resolve(result);
+}
+
+function doSomethingElse(previousResult) {
+  // Simulating a synchronous operation
+  const newResult = `${previousResult}, Second result`;
+  console.log(`Step 2: ${newResult}`);
+  return Promise.resolve(newResult);
+}
+
+function doThirdThing(previousResult) {
+  // Simulating a synchronous operation
+  const finalResult = `${previousResult}, Third result`;
+  console.log(`Step 3: ${finalResult}`);
+  return Promise.resolve(finalResult);
+}
+
+function getUserResponse() {
+  return new Promise((resolve) => {
+    // Simulating user input with a button click
+    const button = document.getElementById("userButton");
+
+    if (button) {
+      button.addEventListener("click", () => {
+        const userInput = prompt("Enter something:");
+        resolve(userInput);
+      });
+    } else {
+      resolve("Default user input");
+    }
+  });
+}
+
+function failureCallback(error) {
+  console.error(`Something went wrong: ${error}`);
+}
+
+// Usage of the promises chain
+doSomething()
+  .then((result) => doSomethingElse(result))
+  .then((newResult) =>
+    getUserResponse().then(
+      (userInput) => `${newResult}, User input: ${userInput}`
+    )
+  )
+  .then((finalResult) => {
+    console.log(`Got the final result: ${finalResult}`);
+  })
+  .catch(failureCallback);
