@@ -640,25 +640,25 @@ function doChoice(choice) {
   if (choice === "hit") {
     hit();
   } else if (choice === "split") {
-    gameState.splitHands.push([gameState.playerCards[0], getRandomCard()]);
-    gameState.splitHands.push([gameState.playerCards[1]]);
+    // put each of the split cards into it's own array to set up the splitQueue
+    gameState.playerCards = gameState.playerCards.map((card) => [card]);
     console.log(
-      `split hands initialize: ${JSON.stringify(gameState.splitHands)}`
+      `split hands initialize: ${JSON.stringify(gameState.playerCards)}`
     );
     document.getElementById("player-cards").innerHTML = `
     <div class="container">
       <div class="row" id = "split-container">
-        <div class="col-md-6">
-            <h2>${gameState.splitHands[0][0]}</h2>
-            <h2>${gameState.splitHands[0][1]}</h2>
-        </div>
-        <div class="col-md-6">
-            <h2>${gameState.splitHands[1][0]}</h2>
-        </div>
       </div>
     </div>`;
+    for (let idx = 0; idx < gameState.playerCards.length; idx++) {
+      let currHand = gameState.playerCards[idx];
+      document.getElementById("split-container").innerHTML += `
+      <div class="col-md-6">
+       <h2>${currHand[0]}</h2>
+      </div>
+      `;
+    }
   }
-  getChoice(gameState.splitHands, gameState.dealerCards);
 }
 function hit() {
   let cardVal = getRandomCard();
@@ -668,4 +668,5 @@ function hit() {
     ? getChoice(gameState.playerCards, gameState.dealerCards)
     : playBlackJack();
 }
-function doSplit() {}
+
+function splitQueue() {}
