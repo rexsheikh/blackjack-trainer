@@ -663,8 +663,9 @@ function evalHand(cards) {
   } else {
     eval = "safeSum";
   }
+  console.log(`eval: ${eval}`);
   if (gameState.turn === "player") {
-    if (sum != "safeSum") {
+    if (eval != "safeSum") {
       gameState.turn = "dealer";
       return Promise.resolve("playerTurnComplete");
     } else {
