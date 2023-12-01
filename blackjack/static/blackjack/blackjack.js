@@ -469,7 +469,6 @@ function getRandomCard() {
   return cardVal;
 }
 function determineCorrect(pA, pB, dU, choice) {
-  console.log("evalChoice...");
   // eval pairs
   if (pA === pB) {
     const correctChoice = stratPairs[pA][dU];
@@ -568,16 +567,24 @@ function bet() {
   });
 }
 async function playerActionLoop() {
-  const choice = await getPlayerChoice(
-    gameState.playerCards,
-    gameState.dealerCards
+  console.log("starting player loop...");
+  console.log(
+    `gamestate.playerCards: ${JSON.stringify(gameState.playerCards)}`
   );
-  await doPlayerChoice(choice);
-  const result = await evalHand(gameState.playerCards);
-  if (result === "playerTurnComplete") {
-    await dealerActionLoop();
+  const eval = await evalHand(gameState.playerCards);
+  if (eval != "safeSum") {
+    console.log(`player ${eval}!!`);
+    // show dealer down card, show dealer down card
+    // capture bets
+  } else {
+    console.log("getting new choice..");
+    const choice = await getPlayerChoice(
+      gameState.playerCards,
+      gameState.dealerCards
+    );
+    await doPlayerChoice(choice);
+    return playerActionLoop();
   }
-  return result;
 }
 function getPlayerChoice(playerCards, dealerCards) {
   console.log("getPlayerChoice...");
@@ -614,10 +621,10 @@ function getPlayerChoice(playerCards, dealerCards) {
     });
   });
 }
-function doPlayerChoice(choice) {
+async function doPlayerChoice(choice) {
   console.log(`doPlayerChoice...${choice}`);
   if (choice === "hit") {
-    hit("player-cards");
+    await hit("player-cards");
   } else if (choice === "split") {
     // put each of the split cards into it's own array to set up the splitQueue
     gameState.playerCards = gameState.playerCards.map((card) => [card]);
@@ -653,6 +660,7 @@ async function playBlackJack() {
 }
 
 function evalHand(cards) {
+  console.log(`evalHand...`);
   const sum = getSum(cards);
   let eval;
   if (sum === 21) {
@@ -662,158 +670,47 @@ function evalHand(cards) {
   } else {
     eval = "safeSum";
   }
-  console.log(`eval: ${eval}`);
+  console.log(`sum calc: ...${sum}...`);
   if (gameState.turn === "player") {
     if (eval != "safeSum") {
       gameState.turn = "dealer";
-      return Promise.resolve("playerTurnComplete");
+      console.log("Player turn complete...");
+      return Promise.resolve(eval);
     } else {
-      return playerActionLoop();
+      console.log(`...determined safeSum...`);
+      return Promise.resolve("safeSum");
     }
   } else {
     if (eval != "safeSum") {
       console.log(`dealer ${eval}!!`);
-      console.log("resetting....");
-      // return resetGameState();
+      // need to add logic to capture wins somewhere...
     } else {
       if ((gameState.dealerCards.includes(11) && sum === 17) || sum >= 17) {
         console.log("dealerStand");
         return "dealerStand";
       } else {
         console.log("dealerHit");
-        return "dealerHit";
+        return dealerActionLoop();
       }
     }
   }
 }
 
 async function dealerActionLoop() {
-  const dealerEval = evalHand(gameState.dealerCards);
-  if (dealerEval === "dealerStand") {
-    console.log("dealer stand...end and reset game ");
+  const result = await evalHand(gameState.playerCards);
+  if (result === "dealerStand") {
     return resetGameState();
   } else {
-    const newHit = await dealerHit();
-    await evalHand(gameState.dealerCards);
+    hit("dealer-cards");
   }
+  return result;
 }
 
-function hit(hand) {
+async function hit(hand) {
   setTimeout(() => {
     let cardVal = getRandomCard();
     gameState.playerCards.push(cardVal);
     buildAssignCard(cardVal, hand);
   }, 1000);
+  return Promise.resolve("hit complete");
 }
-
-function getSumPlayer(cards) {
-  console.log("getSumPlayer...");
-  let sum = cards.reduce(
-    (accumulator, currentValue) => accumulator + currentValue,
-    0
-  );
-  if (sum === 21) {
-    return "blackjack";
-  } else if (sum > 21) {
-    return "bust";
-  } else {
-    return "safeSum";
-  }
-}
-
-// **potential templates for split**
-function conditionalRepeat(steps) {
-  let currentStep = 1;
-
-  function performStep() {
-    return new Promise((resolve) => {
-      // Simulating an asynchronous operation
-      console.log(`Step ${currentStep} completed`);
-      currentStep++;
-      resolve();
-    });
-  }
-
-  function repeat() {
-    if (currentStep <= steps) {
-      performStep().then(() => {
-        repeat();
-      });
-    } else {
-      console.log("All steps completed!");
-    }
-  }
-
-  const startButton = document.getElementById("startButton");
-
-  if (startButton) {
-    startButton.addEventListener("click", () => {
-      currentStep = 1;
-      repeat();
-    });
-  }
-}
-
-// // Example usage: Repeat 3 steps on button click
-// conditionalRepeat(3);
-
-// // chaining promises example
-// function doSomething() {
-//   // Simulating a synchronous operation
-//   const result = "First result";
-//   console.log(`Step 1: ${result}`);
-//   return Promise.resolve(result);
-// }
-
-// function doSomethingElse(previousResult) {
-//   // Simulating a synchronous operation
-//   const newResult = `${previousResult}, Second result`;
-//   console.log(`Step 2: ${newResult}`);
-//   return Promise.resolve(newResult);
-// }
-
-// function doThirdThing(previousResult) {
-//   // Simulating a synchronous operation
-//   const finalResult = `${previousResult}, Third result`;
-
-//   // Simulating evaluation and decision
-//   const shouldStartOver = confirm("Do you want to start over the loop?");
-//   if (shouldStartOver) {
-//     console.log("Starting over the loop...");
-//     return doSomething(); // Start over the loop
-//   } else {
-//     console.log(`Loop completed with result: ${finalResult}`);
-//     return Promise.resolve(finalResult);
-//   }
-// }
-
-// function getUserResponse() {
-//   return new Promise((resolve) => {
-//     // Simulating user input with a button click
-//     const button = document.getElementById("userButton");
-
-//     if (button) {
-//       button.addEventListener("click", () => {
-//         const userInput = prompt("Enter something:");
-//         resolve(userInput);
-//       });
-//     } else {
-//       resolve("Default user input");
-//     }
-//   });
-// }
-
-// function failureCallback(error) {
-//   console.error(`Something went wrong: ${error}`);
-// }
-
-// // Initial usage of the promises chain
-// doSomething()
-//   .then((result) => doSomethingElse(result))
-//   .then((newResult) =>
-//     getUserResponse().then(
-//       (userInput) => `${newResult}, User input: ${userInput}`
-//     )
-//   )
-//   .then((finalResult) => doThirdThing(finalResult))
-//   .catch(failureCallback);
