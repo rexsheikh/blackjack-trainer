@@ -640,7 +640,6 @@ function doPlayerChoice(choice) {
   }
   return Promise.resolve("choice complete");
 }
-// ********* DEALER ACTIONS / REACTIONS ********
 
 // main game loop
 async function playBlackJack() {
@@ -650,7 +649,7 @@ async function playBlackJack() {
   bet();
   firstDeal();
   showDeal();
-  playerActionLoop();
+  await playerActionLoop();
 }
 
 function evalHand(cards) {
@@ -671,34 +670,39 @@ function evalHand(cards) {
     } else {
       return playerActionLoop();
     }
+  } else {
+    if (eval != "safeSum") {
+      console.log(`dealer ${eval}!!`);
+      console.log("resetting....");
+      // return resetGameState();
+    } else {
+      if ((gameState.dealerCards.includes(11) && sum === 17) || sum >= 17) {
+        console.log("dealerStand");
+        return "dealerStand";
+      } else {
+        console.log("dealerHit");
+        return "dealerHit";
+      }
+    }
   }
-  const handState = getSumPlayer(cards);
-  console.log(handState);
-  return Promise.resolve(handState);
 }
 
 async function dealerActionLoop() {
-  // after deal, need to see if dealer has blackjack
-  // if not dealer flip second
-  // check
-  console.log(
-    `it is now the dealer's turn. dealer hand: ${JSON.stringify(
-      gameState.dealerCards
-    )}`
-  );
+  const dealerEval = evalHand(gameState.dealerCards);
+  if (dealerEval === "dealerStand") {
+    console.log("dealer stand...end and reset game ");
+    return resetGameState();
+  } else {
+    setTimeout(300);
+    console.log("hit");
+  }
 }
 
-function dealerHit() {
-  let cardVal = getRandomCard();
-  gameState.dealerCards.push(cardVal);
-  buildAssignCard(cardVal, "dealer-cards");
-  return Promise.resolve("hit complete");
-}
-
-function hit(hand) {
+async function hit(hand) {
   let cardVal = getRandomCard();
   gameState.playerCards.push(cardVal);
   buildAssignCard(cardVal, hand);
+  return Promise.resolve("hit complete");
 }
 function getSumPlayer(cards) {
   console.log("getSumPlayer...");
@@ -713,15 +717,6 @@ function getSumPlayer(cards) {
   } else {
     return "safeSum";
   }
-}
-function dealerTurn() {}
-
-function stand() {
-  // it is now the dealer's turn. hit until 17 or greater, blackjack or bust
-}
-
-function double() {
-  // double bet. deal one more card. then dealer's turn.
 }
 
 // **potential templates for split**
