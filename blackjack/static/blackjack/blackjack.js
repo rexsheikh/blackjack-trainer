@@ -693,17 +693,19 @@ async function dealerActionLoop() {
     console.log("dealer stand...end and reset game ");
     return resetGameState();
   } else {
-    setTimeout(300);
-    console.log("hit");
+    const newHit = await dealerHit();
+    await evalHand(gameState.dealerCards);
   }
 }
 
-async function hit(hand) {
-  let cardVal = getRandomCard();
-  gameState.playerCards.push(cardVal);
-  buildAssignCard(cardVal, hand);
-  return Promise.resolve("hit complete");
+function hit(hand) {
+  setTimeout(() => {
+    let cardVal = getRandomCard();
+    gameState.playerCards.push(cardVal);
+    buildAssignCard(cardVal, hand);
+  }, 1000);
 }
+
 function getSumPlayer(cards) {
   console.log("getSumPlayer...");
   let sum = cards.reduce(
