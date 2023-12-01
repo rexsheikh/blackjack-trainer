@@ -22,6 +22,7 @@
 // using promises to chain events (specifically using then)
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises
 
+// *********GLOBAL VARIABLES AND CONSTANTS********
 // playerSum:dealerUp:correctAns
 const stratHardTotal = {
   5: {
@@ -447,7 +448,7 @@ const gameState = {
   playerBust: false,
   dealerBust: false,
   totalBet: 0,
-  playerTurn: true,
+  turn: "player",
 };
 const cards = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
@@ -455,7 +456,44 @@ document.addEventListener("DOMContentLoaded", function () {
   console.log("dom loaded...");
   playBlackJack();
 });
-
+// ********* HELPER FUNCTIONS ********
+function buildAssignCard(cardVal, placement) {
+  console.log("buildAssignCard...");
+  let cardEl = document.createElement("h2");
+  cardEl.innerHTML = cardVal;
+  document.getElementById(placement).appendChild(cardEl);
+}
+function getRandomCard() {
+  let idx = Math.floor(Math.random() * cards.length);
+  let cardVal = cards[idx];
+  return cardVal;
+}
+function determineCorrect(pA, pB, dU, choice) {
+  console.log("evalChoice...");
+  // eval pairs
+  if (pA === pB) {
+    const correctChoice = stratPairs[pA][dU];
+    return correctChoice === choice;
+    // eval soft totals
+  } else if (pA === 11 || pB === 11) {
+    let sum = pA + pB;
+    const correctChoice = stratHardTotal[sum][dU];
+    return correctChoice === choice;
+    // eval hard totals
+  } else {
+    let sum = pA + pB;
+    const correctChoice = stratHardTotal[sum][dU];
+    return correctChoice === choice;
+  }
+}
+function getSum(cards) {
+  let sum = cards.reduce(
+    (accumulator, currentValue) => accumulator + currentValue,
+    0
+  );
+  return sum;
+}
+// ********* INITIALIZE / RESET FUNCTIONS ********
 function resetGameState() {
   console.log("reset game state...");
   toggleViews([
@@ -478,32 +516,16 @@ function resetGameState() {
     dealerCardDiv.removeChild(dealerCardDiv.firstChild);
   }
 }
-async function playBlackJack() {
-  console.log("playBlackJack...");
-  resetGameState();
-  toggleViews([["bet-view", 1]]);
-  bet();
-  firstDeal();
-  showDeal();
-  playerActionLoop().then(() => dealerActionLoop());
+function toggleViews(actionList) {
+  for (let i = 0; i < actionList.length; i++) {
+    let [view, action] = actionList[i];
+    if (action === 0) {
+      document.getElementById(view).style.display = "none";
+    } else {
+      document.getElementById(view).style.display = "block";
+    }
+  }
 }
-
-function bet() {
-  console.log("bet...");
-  toggleViews([
-    ["deal-view", 0],
-    ["choice-view", 0],
-  ]);
-  const betBtns = document.querySelectorAll(".bet-btn");
-  betBtns.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      const betVal = parseInt(btn.getAttribute("data-chip-val"), 10);
-      gameState.totalBet += betVal;
-      console.log(gameState.totalBet);
-    });
-  });
-}
-
 function showDeal() {
   document.querySelector(".deal-btn").addEventListener("click", function () {
     toggleViews([
@@ -512,19 +534,6 @@ function showDeal() {
       ["choice-view", 1],
     ]);
   });
-}
-function playerActionLoop() {
-  return getChoice(gameState.playerCards, gameState.dealerCards)
-    .then((choice) => {
-      return doChoice(choice);
-    })
-    .then(() => {
-      evalHand(gameState.playerCards);
-    })
-    .then((result) => {
-      console.log(result);
-      return result;
-    });
 }
 function firstDeal() {
   console.log("firstDeal...");
@@ -542,22 +551,36 @@ function firstDeal() {
     }
   }
 }
-
-function buildAssignCard(cardVal, placement) {
-  console.log("buildAssignCard...");
-  let cardEl = document.createElement("h2");
-  cardEl.innerHTML = cardVal;
-  document.getElementById(placement).appendChild(cardEl);
+// *********PLAYER ACTIONS / REACTIONS ********
+function bet() {
+  console.log("bet...");
+  toggleViews([
+    ["deal-view", 0],
+    ["choice-view", 0],
+  ]);
+  const betBtns = document.querySelectorAll(".bet-btn");
+  betBtns.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const betVal = parseInt(btn.getAttribute("data-chip-val"), 10);
+      gameState.totalBet += betVal;
+      console.log(gameState.totalBet);
+    });
+  });
 }
-function getRandomCard() {
-  let idx = Math.floor(Math.random() * cards.length);
-  let cardVal = cards[idx];
-  return cardVal;
+async function playerActionLoop() {
+  const choice = await getPlayerChoice(
+    gameState.playerCards,
+    gameState.dealerCards
+  );
+  await doPlayerChoice(choice);
+  const result = await evalHand(gameState.playerCards);
+  if (result === "playerTurnComplete") {
+    await dealerActionLoop();
+  }
+  return result;
 }
-
-// either dealer or player cards passed
-function getChoice(playerCards, dealerCards) {
-  console.log("getChoice...");
+function getPlayerChoice(playerCards, dealerCards) {
+  console.log("getPlayerChoice...");
   const choiceBtns = document.querySelectorAll(".choice-btn");
   let pA = playerCards[0];
   let pB = playerCards[1];
@@ -591,40 +614,10 @@ function getChoice(playerCards, dealerCards) {
     });
   });
 }
-
-function determineCorrect(pA, pB, dU, choice) {
-  console.log("evalChoice...");
-  // eval pairs
-  if (pA === pB) {
-    const correctChoice = stratPairs[pA][dU];
-    return correctChoice === choice;
-    // eval soft totals
-  } else if (pA === 11 || pB === 11) {
-    let sum = pA + pB;
-    const correctChoice = stratHardTotal[sum][dU];
-    return correctChoice === choice;
-    // eval hard totals
-  } else {
-    let sum = pA + pB;
-    const correctChoice = stratHardTotal[sum][dU];
-    return correctChoice === choice;
-  }
-}
-function toggleViews(actionList) {
-  for (let i = 0; i < actionList.length; i++) {
-    let [view, action] = actionList[i];
-    if (action === 0) {
-      document.getElementById(view).style.display = "none";
-    } else {
-      document.getElementById(view).style.display = "block";
-    }
-  }
-}
-
-function doChoice(choice) {
-  console.log(`doChoice...${choice}`);
+function doPlayerChoice(choice) {
+  console.log(`doPlayerChoice...${choice}`);
   if (choice === "hit") {
-    hit();
+    hit("player-cards");
   } else if (choice === "split") {
     // put each of the split cards into it's own array to set up the splitQueue
     gameState.playerCards = gameState.playerCards.map((card) => [card]);
@@ -647,23 +640,51 @@ function doChoice(choice) {
   }
   return Promise.resolve("choice complete");
 }
+// ********* DEALER ACTIONS / REACTIONS ********
 
-function evalHand(cards) {
-  const handState = getSumPlayer(cards);
-  if (gameState.playerTurn && handState != "safeSum") {
-    return Promise.resolve("dealerTurn");
-  } else {
-    return playerActionLoop();
-  }
+// main game loop
+async function playBlackJack() {
+  console.log("playBlackJack...");
+  resetGameState();
+  toggleViews([["bet-view", 1]]);
+  bet();
+  firstDeal();
+  showDeal();
+  playerActionLoop();
 }
 
-function dealerActionLoop() {
+function evalHand(cards) {
+  const sum = getSum(cards);
+  let eval;
+  if (sum === 21) {
+    eval = "blackjack";
+  } else if (sum > 21) {
+    eval = "bust";
+  } else {
+    eval = "safeSum";
+  }
+  if (gameState.turn === "player") {
+    if (sum != "safeSum") {
+      gameState.turn = "dealer";
+      return Promise.resolve("playerTurnComplete");
+    } else {
+      return playerActionLoop();
+    }
+  }
+  const handState = getSumPlayer(cards);
+  console.log(handState);
+  return Promise.resolve(handState);
+}
+
+async function dealerActionLoop() {
   // after deal, need to see if dealer has blackjack
   // if not dealer flip second
   // check
-  console.log(`dealer hand: ${JSON.stringify(gameState.dealerCards)}`);
-  const res = evalDealerHand(gameState.dealerCards);
-  console.log(res);
+  console.log(
+    `it is now the dealer's turn. dealer hand: ${JSON.stringify(
+      gameState.dealerCards
+    )}`
+  );
 }
 
 function dealerHit() {
@@ -672,31 +693,11 @@ function dealerHit() {
   buildAssignCard(cardVal, "dealer-cards");
   return Promise.resolve("hit complete");
 }
-function evalDealerHand(cards) {
-  const handState = getSumDealer(cards);
-  return handState;
-}
-function getSumDealer(cards) {
-  console.log("getSumDealer...");
-  let sum = cards.reduce(
-    (accumulator, currentValue) => accumulator + currentValue,
-    0
-  );
-  if (sum === 21) {
-    sum = "blackjack";
-  } else if (sum > 21) {
-    sum = "bust";
-  } else if (sum < 17 || (gameState.dealerCards.includes(11) && sum === 17)) {
-    sum = "hit";
-  } else {
-    sum = "stand";
-  }
-  return sum;
-}
-function hit() {
+
+function hit(hand) {
   let cardVal = getRandomCard();
   gameState.playerCards.push(cardVal);
-  buildAssignCard(cardVal, "player-cards");
+  buildAssignCard(cardVal, hand);
 }
 function getSumPlayer(cards) {
   console.log("getSumPlayer...");
@@ -720,16 +721,6 @@ function stand() {
 
 function double() {
   // double bet. deal one more card. then dealer's turn.
-}
-
-async function splitQueue() {
-  for (let idx = 0; idx < gameState.playerCards.length; idx++) {
-    const playHand = getChoice(
-      gameState.playerCards[idx],
-      gameState.dealerCards
-    );
-    await playHand;
-  }
 }
 
 // **potential templates for split**
