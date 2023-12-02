@@ -1,11 +1,8 @@
 1. Necessary features:
    => user has to bet.
 2. Next up:
-   => build out backend to capture responses.
-   => game flow and table clear - determine which buttons do show based on dealt player cards
-   a. split
-   b. stand
-   c. double
+   => dealerUp fix
+   => fix playerAction loop...the sum is not updating after hit.
 
    => basic animations
    a. deal

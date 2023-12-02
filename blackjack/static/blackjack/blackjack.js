@@ -22,6 +22,9 @@
 // using promises to chain events (specifically using then)
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises
 
+// array from to add an html element to a NodeList
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from
+
 // *********GLOBAL VARIABLES AND CONSTANTS********
 // playerSum:dealerUp:correctAns
 const stratHardTotal = {
@@ -454,7 +457,7 @@ const cards = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
 document.addEventListener("DOMContentLoaded", function () {
   console.log("dom loaded...");
-  playBlackJack();
+  initialize();
 });
 // ********* HELPER FUNCTIONS ********
 function buildAssignCard(cardVal, placement) {
@@ -493,6 +496,21 @@ function getSum(cards) {
   return sum;
 }
 // ********* INITIALIZE / RESET FUNCTIONS ********
+// intialize functions
+// bet, deal, eval
+async function initialize() {
+  resetGameState();
+  toggleViews([["bet-view", 1]]);
+  bet();
+  firstDeal();
+  const check = await initCheck(); //do I need the await here to run the timeouts?
+  console.log(check);
+  if (check != "proceed") {
+    console.log("init check not proceed...");
+  } else {
+    getPlayerChoice();
+  }
+}
 function resetGameState() {
   console.log("reset game state...");
   toggleViews([
@@ -525,7 +543,26 @@ function toggleViews(actionList) {
     }
   }
 }
-function showDeal() {
+
+function firstDeal() {
+  console.log("firstDeal...");
+  for (let i = 0; i < 4; i++) {
+    let cardVal = getRandomCard();
+    if (i % 2 == 0) {
+      gameState.playerCards.push(cardVal);
+      buildAssignCard(cardVal, "player-cards");
+    } else {
+      gameState.dealerCards.push(cardVal);
+      if (i === 1) {
+        buildAssignCard(cardVal, "dealer-cards");
+      } else {
+        let cardEl = document.createElement("h2");
+        cardEl.id = "dealer-down";
+        cardEl.innerHTML = "dealerDown";
+        document.getElementById("dealer-cards").appendChild(cardEl);
+      }
+    }
+  }
   document.querySelector(".deal-btn").addEventListener("click", function () {
     toggleViews([
       ["bet-view", 0],
@@ -534,38 +571,24 @@ function showDeal() {
     ]);
   });
 }
-function firstDeal() {
-  console.log("firstDeal...");
-  for (let i = 0; i < 4; i++) {
-    let cardVal = getRandomCard();
-    if (i % 2 == 0) {
-      buildAssignCard(cardVal, "player-cards");
-      gameState.playerCards.push(cardVal);
-    } else {
-      if (i === 1) {
-        dealerUp = cardVal;
-      }
-      gameState.dealerCards.push(cardVal);
-      buildAssignCard(cardVal, "dealer-cards");
-    }
-  }
-}
-// *********PLAYER ACTIONS / REACTIONS ********
 function bet() {
   console.log("bet...");
   toggleViews([
     ["deal-view", 0],
     ["choice-view", 0],
+    ["deal-btn-view", 0],
   ]);
   const betBtns = document.querySelectorAll(".bet-btn");
   betBtns.forEach(function (btn) {
     btn.addEventListener("click", function () {
       const betVal = parseInt(btn.getAttribute("data-chip-val"), 10);
       gameState.totalBet += betVal;
+      toggleViews([["deal-btn-view", 1]]);
       console.log(gameState.totalBet);
     });
   });
 }
+// *********PLAYER ACTIONS / REACTIONS ********
 async function playerActionLoop() {
   console.log("starting player loop...");
   console.log(
@@ -586,77 +609,74 @@ async function playerActionLoop() {
     return playerActionLoop();
   }
 }
-function getPlayerChoice(playerCards, dealerCards) {
+function getPlayerChoice() {
   console.log("getPlayerChoice...");
+  let pA = gameState.playerCards[0];
+  let pB = gameState.playerCards[1];
+  let dU = gameState.dealerCards[0];
+  // get all the buttons to add event listeners. always show the hit and stand button. double/split conditionally.
   const choiceBtns = document.querySelectorAll(".choice-btn");
-  let pA = playerCards[0];
-  let pB = playerCards[1];
-  let dU = dealerCards[0];
-  return new Promise((resolve) => {
-    choiceBtns.forEach((btn) => {
-      // Create a clone of each button to remove existing event listeners
-      const cloneBtn = btn.cloneNode(true);
-      btn.parentNode.replaceChild(cloneBtn, btn);
+  toggleViews([
+    ["hit-btn", 1],
+    ["stand-btn", 1],
+    ["double-btn", 0],
+    ["split-btn", 0],
+  ]);
+  if (gameState.playerCards.length === 2) {
+    toggleViews([["double-btn", 1]]);
+  }
+  if (pA === pB) {
+    toggleViews([["split-btn", 1]]);
+  }
 
-      cloneBtn.addEventListener("click", function () {
-        const choice = cloneBtn.getAttribute("data-choice");
-        const correct = determineCorrect(pA, pB, dU, choice);
+  choiceBtns.forEach((btn) => {
+    // Create a clone of each button to remove existing event listeners
+    const cloneBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(cloneBtn, btn);
 
-        fetch("/blackjack", {
-          method: "POST",
-          body: JSON.stringify({
-            choice: choice,
-            player_a: pA,
-            player_b: pB,
-            dealer_up: dU,
-            correct: correct,
-          }),
-        })
-          .then((response) => response.json())
-          .then((result) => {
-            console.log(result);
-            resolve(choice);
-          });
-      });
+    cloneBtn.addEventListener("click", function () {
+      const choice = cloneBtn.getAttribute("data-choice");
+      const correct = determineCorrect(pA, pB, dU, choice);
+      toggleViews([["choice-view", 0]]);
+      doPlayerChoice(choice);
     });
   });
 }
+
 async function doPlayerChoice(choice) {
-  console.log(`doPlayerChoice...${choice}`);
   if (choice === "hit") {
-    await hit("player-cards");
-  } else if (choice === "split") {
-    // put each of the split cards into it's own array to set up the splitQueue
-    gameState.playerCards = gameState.playerCards.map((card) => [card]);
-    console.log(
-      `split hands initialize: ${JSON.stringify(gameState.playerCards)}`
-    );
-    document.getElementById("player-cards").innerHTML = `
-    <div class="container">
-      <div class="row" id = "split-container">
-      </div>
-    </div>`;
-    for (let idx = 0; idx < gameState.playerCards.length; idx++) {
-      let currHand = gameState.playerCards[idx];
-      document.getElementById("split-container").innerHTML += `
-      <div class="col-md-6">
-       <h2>${currHand[0]}</h2>
-      </div>
-      `;
-    }
+    await playerHitLoop();
   }
-  return Promise.resolve("choice complete");
 }
 
-// main game loop
-async function playBlackJack() {
-  console.log("playBlackJack...");
-  resetGameState();
-  toggleViews([["bet-view", 1]]);
-  bet();
-  firstDeal();
-  showDeal();
-  await playerActionLoop();
+// check for player and dealer blackjack on first deal
+function initCheck() {
+  let pSum = getSum(gameState.playerCards);
+  let dSum = getSum(gameState.dealerCards);
+  if (pSum === 21 && dSum === 21) {
+    console.log("push");
+    let dealerDown = document.getElementById("dealer-down");
+    dealerDown.innerHTML = gameState.dealerCards[1];
+    setTimeout(() => {
+      return resetGameState();
+    }, 1000);
+  } else if (pSum != 21 && dSum === 21) {
+    console.log("dealerWin");
+    setTimeout(() => {
+      let dealerDown = document.getElementById("dealer-down");
+      dealerDown.innerHTML = gameState.dealerCards[1];
+    }, 500);
+    return initialize();
+  } else if (pSum === 21 && dSum != 21) {
+    console.log("playerWin");
+    setTimeout(() => {
+      let dealerDown = document.getElementById("dealer-down");
+      dealerDown.innerHTML = gameState.dealerCards[1];
+    }, 500);
+    return initialize();
+  } else {
+    return "proceed";
+  }
 }
 
 function evalHand(cards) {
@@ -670,47 +690,29 @@ function evalHand(cards) {
   } else {
     eval = "safeSum";
   }
-  console.log(`sum calc: ...${sum}...`);
-  if (gameState.turn === "player") {
-    if (eval != "safeSum") {
-      gameState.turn = "dealer";
-      console.log("Player turn complete...");
-      return Promise.resolve(eval);
-    } else {
-      console.log(`...determined safeSum...`);
-      return Promise.resolve("safeSum");
-    }
-  } else {
-    if (eval != "safeSum") {
-      console.log(`dealer ${eval}!!`);
-      // need to add logic to capture wins somewhere...
-    } else {
-      if ((gameState.dealerCards.includes(11) && sum === 17) || sum >= 17) {
-        console.log("dealerStand");
-        return "dealerStand";
-      } else {
-        console.log("dealerHit");
-        return dealerActionLoop();
-      }
-    }
-  }
+  return eval;
 }
 
-async function dealerActionLoop() {
-  const result = await evalHand(gameState.playerCards);
-  if (result === "dealerStand") {
-    return resetGameState();
-  } else {
-    hit("dealer-cards");
-  }
-  return result;
+function hit(hand) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      let cardVal = getRandomCard();
+      gameState.playerCards.push(cardVal);
+      buildAssignCard(cardVal, hand);
+      resolve("hit complete");
+    }, 500);
+  });
 }
 
-async function hit(hand) {
-  setTimeout(() => {
-    let cardVal = getRandomCard();
-    gameState.playerCards.push(cardVal);
-    buildAssignCard(cardVal, hand);
-  }, 1000);
-  return Promise.resolve("hit complete");
+async function playerHitLoop() {
+  let count = 0;
+  while (count < 1) {
+    console.log("player hit loop start...");
+    toggleViews([["choice-view", 0]]);
+    await hit("player-cards");
+    toggleViews([["choice-view", 1]]);
+    count++;
+  }
+  console.log("hit loop complete..");
+  return Promise.resolve("hit loop complete..");
 }
