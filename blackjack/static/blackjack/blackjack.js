@@ -704,14 +704,14 @@ function hit(hand) {
   });
 }
 
-async function playerHitLoop() {
-  let count = 0;
-  while (count < 1) {
-    console.log("player hit loop start...");
-    toggleViews([["choice-view", 0]]);
-    await hit("player-cards");
-    toggleViews([["choice-view", 1]]);
-    count++;
+async function playerHit() {
+  toggleViews([["choice-view", 0]]);
+  await hit();
+  const eval = evalHand(gameState.playerCards);
+  if (eval != "safeSum") {
+    console.log("process bust or blackjack");
+  } else {
+    console.log("continue loop");
   }
   console.log("hit loop complete..");
   return Promise.resolve("hit loop complete..");
