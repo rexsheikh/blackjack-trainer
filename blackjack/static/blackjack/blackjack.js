@@ -461,7 +461,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 // ********* HELPER FUNCTIONS ********
 function buildAssignCard(cardVal, placement) {
-  console.log("buildAssignCard...");
   let cardEl = document.createElement("h2");
   cardEl.innerHTML = cardVal;
   document.getElementById(placement).appendChild(cardEl);
@@ -504,35 +503,36 @@ async function initialize() {
   bet();
   firstDeal();
   const check = await initCheck(); //do I need the await here to run the timeouts?
-  console.log(check);
+  console.log(`initialize check...${check}`);
   if (check != "proceed") {
     console.log("init check not proceed...");
   } else {
     getPlayerChoice();
   }
 }
+// wait half a second for end game animation then reset.
+
 function resetGameState() {
-  console.log("reset game state...");
-  toggleViews([
-    ["bet-view", 1],
-    ["choice-view", 0],
-  ]);
-  gameState.playerCards = [];
-  gameState.dealerCards = [];
-  gameState.playerWin = false;
-  gameState.dealerWin = false;
-  gameState.playerBust = [];
-  gameState.dealerBust = [];
-  gameState.totalBet = 0;
-  const playerCardDiv = document.getElementById("player-cards");
-  const dealerCardDiv = document.getElementById("dealer-cards");
-  while (playerCardDiv.firstChild) {
-    playerCardDiv.removeChild(playerCardDiv.firstChild);
-  }
-  while (dealerCardDiv.firstChild) {
-    dealerCardDiv.removeChild(dealerCardDiv.firstChild);
-  }
-  console.log(`gameState: ${JSON.stringify(gameState)}`);
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      gameState.playerCards = [];
+      gameState.dealerCards = [];
+      gameState.playerWin = false;
+      gameState.dealerWin = false;
+      gameState.playerBust = [];
+      gameState.dealerBust = [];
+      gameState.totalBet = 0;
+      const playerCardDiv = document.getElementById("player-cards");
+      const dealerCardDiv = document.getElementById("dealer-cards");
+      while (playerCardDiv.firstChild) {
+        playerCardDiv.removeChild(playerCardDiv.firstChild);
+      }
+      while (dealerCardDiv.firstChild) {
+        dealerCardDiv.removeChild(dealerCardDiv.firstChild);
+        resolve("reset complete");
+      }
+    });
+  });
 }
 function toggleViews(actionList) {
   for (let i = 0; i < actionList.length; i++) {
@@ -647,35 +647,36 @@ function getPlayerChoice() {
 
 async function doPlayerChoice(choice) {
   if (choice === "hit") {
-    await playerHit();
+    playerHit();
   }
 }
-
+function showDealerDown() {
+  return new Promise(() => {
+    setTimeout(() => {
+      let dealerDown = document.getElementById("dealer-down");
+      dealerDown.innerHTML = gameState.dealerCards[1];
+    }, 500);
+  });
+}
 // check for player and dealer blackjack on first deal
-function initCheck() {
+async function initCheck() {
   let pSum = getSum(gameState.playerCards);
   let dSum = getSum(gameState.dealerCards);
   if (pSum === 21 && dSum === 21) {
-    console.log("push");
-    let dealerDown = document.getElementById("dealer-down");
-    dealerDown.innerHTML = gameState.dealerCards[1];
-    setTimeout(() => {
-      return resetGameState();
-    }, 1000);
+    await showDealerDown();
+    // need modal or something to show push.
+    await resetGameState();
+    initialize();
   } else if (pSum != 21 && dSum === 21) {
-    console.log("dealerWin");
-    setTimeout(() => {
-      let dealerDown = document.getElementById("dealer-down");
-      dealerDown.innerHTML = gameState.dealerCards[1];
-    }, 500);
-    return initialize();
+    await showDealerDown();
+    // need modal or something to show dealer win.
+    await resetGameState();
+    initialize();
   } else if (pSum === 21 && dSum != 21) {
     console.log("playerWin");
-    setTimeout(() => {
-      let dealerDown = document.getElementById("dealer-down");
-      dealerDown.innerHTML = gameState.dealerCards[1];
-    }, 500);
-    return initialize();
+    await showDealerDown();
+    await resetGameState();
+    initialize();
   } else {
     return "proceed";
   }
@@ -707,16 +708,12 @@ function hit(hand) {
 }
 
 async function playerHit() {
-  console.log(`total bet inside player hit: ${gameState.totalBet}`);
   toggleViews([["choice-view", 0]]);
   await hit("player-cards");
   const eval = evalHand(gameState.playerCards);
   if (eval != "safeSum") {
-    console.log(`${eval}!!!`);
     return initialize();
   } else {
     toggleViews([["choice-view", 1]]);
-    console.log("continue loop");
   }
-  return Promise.resolve("hit loop complete..");
 }
