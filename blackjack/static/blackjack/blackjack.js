@@ -532,6 +532,7 @@ function resetGameState() {
   while (dealerCardDiv.firstChild) {
     dealerCardDiv.removeChild(dealerCardDiv.firstChild);
   }
+  console.log(`gameState: ${JSON.stringify(gameState)}`);
 }
 function toggleViews(actionList) {
   for (let i = 0; i < actionList.length; i++) {
@@ -579,12 +580,12 @@ function bet() {
     ["deal-btn-view", 0],
   ]);
   const betBtns = document.querySelectorAll(".bet-btn");
+  let betHand = 0;
   betBtns.forEach(function (btn) {
     btn.addEventListener("click", function () {
-      const betVal = parseInt(btn.getAttribute("data-chip-val"), 10);
-      gameState.totalBet += betVal;
+      betHand += parseInt(btn.getAttribute("data-chip-val"), 10);
+      gameState.totalBet = betHand;
       toggleViews([["deal-btn-view", 1]]);
-      console.log(gameState.totalBet);
     });
   });
 }
@@ -611,6 +612,7 @@ async function playerActionLoop() {
 }
 function getPlayerChoice() {
   console.log("getPlayerChoice...");
+  console.log(`player bet inside choice....${gameState.totalBet}`);
   let pA = gameState.playerCards[0];
   let pB = gameState.playerCards[1];
   let dU = gameState.dealerCards[0];
@@ -645,7 +647,7 @@ function getPlayerChoice() {
 
 async function doPlayerChoice(choice) {
   if (choice === "hit") {
-    await playerHitLoop();
+    await playerHit();
   }
 }
 
@@ -705,14 +707,16 @@ function hit(hand) {
 }
 
 async function playerHit() {
+  console.log(`total bet inside player hit: ${gameState.totalBet}`);
   toggleViews([["choice-view", 0]]);
-  await hit();
+  await hit("player-cards");
   const eval = evalHand(gameState.playerCards);
   if (eval != "safeSum") {
-    console.log("process bust or blackjack");
+    console.log(`${eval}!!!`);
+    return initialize();
   } else {
+    toggleViews([["choice-view", 1]]);
     console.log("continue loop");
   }
-  console.log("hit loop complete..");
   return Promise.resolve("hit loop complete..");
 }
