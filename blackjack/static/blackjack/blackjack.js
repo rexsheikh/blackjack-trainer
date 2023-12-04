@@ -501,11 +501,11 @@ async function initialize() {
   resetGameState();
   bet();
   firstDeal();
-  await initCheck(); //do I need the await here to run the timeouts?
+  const checkDeal = await initCheck(); //do I need the await here to run the timeouts?
   console.log(
     `player cards: ${gameState.playerCards}...dealer cards: ${gameState.dealerCards}....turn: ${gameState.turn}`
   );
-  if (check != "proceed") {
+  if (checkDeal != "proceed") {
     console.log("init check not proceed...");
   } else {
     getPlayerChoice();
@@ -657,6 +657,7 @@ async function doPlayerChoice(choice) {
     playerHit();
   } else if (choice === "stand") {
     console.log("stand....end player choice...start dealer choice");
+    gameState.turn = "dealer";
     await showDealerDown();
     dealerHitLoop();
     // end player turn, dealer turn
@@ -673,12 +674,11 @@ async function doPlayerChoice(choice) {
   }
 }
 function showDealerDown() {
-  return new Promise(() => {
-    setTimeout(() => {
-      let dealerDown = document.getElementById("dealer-down");
-      dealerDown.innerHTML = gameState.dealerCards[1];
-    }, 500);
-  });
+  setTimeout(() => {
+    let dealerDown = document.getElementById("dealer-down");
+    dealerDown.innerHTML = gameState.dealerCards[1];
+  }, 500);
+  return Promise.resolve("dealer down complete");
 }
 // check for player and dealer blackjack on first deal
 async function initCheck() {
@@ -716,6 +716,7 @@ function evalHand() {
       eval = "safeSum";
     }
   } else {
+    const sum = getSum(gameState.dealerCards);
     let dealerSoftTotal = gameState.dealerCards.includes(11) ? true : false;
     if (sum === 21) {
       eval = "blackjack";
@@ -731,10 +732,14 @@ function evalHand() {
 }
 
 async function dealerHitLoop() {
+  console.log(`turn in dealer loop: ${gameState.turn}`);
   let eval = evalHand();
+  let count = 0;
   while (eval === "dealerHit") {
+    console.log("in dealer hit loop...");
     await hit();
     eval = evalHand();
+    console.log(`dealer next eval is...${eval}`);
   }
   console.log(`...dealer hit loop complete...dealer end was ${eval}`);
 }
