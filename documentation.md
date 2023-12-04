@@ -1,14 +1,10 @@
 1. Necessary features:
    => user has to bet.
 2. Next up:
-   => dealerUp fix
-   => fix playerAction loop...the sum is not updating after hit.
-
-   => basic animations
-   a. deal
-   b. reset
-   c. bet
-   d. split
+   => stand, double, (maybe) split
+   => dealer hit loop
+   => captures and models
+   => start animations, assets
 
 3. Features
    a. peak modal
