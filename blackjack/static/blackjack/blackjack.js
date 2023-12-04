@@ -498,48 +498,45 @@ function getSum(cards) {
 // intialize functions
 // bet, deal, eval
 async function initialize() {
-  // await resetGameState();
-  toggleViews([
-    ["bet-view", 1],
-    ["choice-view", 0],
-    ["deal-btn-view", 0],
-  ]);
+  resetGameState();
   bet();
-  // console.log(
-  //   `player cards: ${gameState.playerCards}...dealer cards: ${gameState.dealerCards}`
-  // );
-  // const check = await initCheck(); //do I need the await here to run the timeouts?
-  // console.log(`initialize check...${check}`);
-  // if (check != "proceed") {
-  //   console.log("init check not proceed...");
-  // } else {
-  //   getPlayerChoice();
-  // }
+  firstDeal();
+  await initCheck(); //do I need the await here to run the timeouts?
+  console.log(
+    `player cards: ${gameState.playerCards}...dealer cards: ${gameState.dealerCards}....turn: ${gameState.turn}`
+  );
+  if (check != "proceed") {
+    console.log("init check not proceed...");
+  } else {
+    getPlayerChoice();
+  }
 }
 // wait half a second for end game animation then reset.
 
 function resetGameState() {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      gameState.playerCards = [];
-      gameState.dealerCards = [];
-      gameState.playerWin = false;
-      gameState.dealerWin = false;
-      gameState.playerBust = [];
-      gameState.dealerBust = [];
-      gameState.totalBet = 0;
-      const playerCardDiv = document.getElementById("player-cards");
-      const dealerCardDiv = document.getElementById("dealer-cards");
-      while (playerCardDiv.firstChild) {
-        playerCardDiv.removeChild(playerCardDiv.firstChild);
-      }
-      while (dealerCardDiv.firstChild) {
-        dealerCardDiv.removeChild(dealerCardDiv.firstChild);
-        resolve("reset complete");
-      }
-    }, 500);
-  });
+  toggleViews([
+    ["bet-view", 1],
+    ["deal-btn-view", 0],
+    ["choice-view", 0],
+    ["deal-btn-view", 0],
+  ]);
+  gameState.playerCards = [];
+  gameState.dealerCards = [];
+  gameState.playerWin = false;
+  gameState.dealerWin = false;
+  gameState.playerBust = [];
+  gameState.dealerBust = [];
+  gameState.totalBet = 0;
+  const playerCardDiv = document.getElementById("player-cards");
+  const dealerCardDiv = document.getElementById("dealer-cards");
+  while (playerCardDiv.firstChild) {
+    playerCardDiv.removeChild(playerCardDiv.firstChild);
+  }
+  while (dealerCardDiv.firstChild) {
+    dealerCardDiv.removeChild(dealerCardDiv.firstChild);
+  }
 }
+
 function toggleViews(actionList) {
   for (let i = 0; i < actionList.length; i++) {
     let [view, action] = actionList[i];
@@ -595,7 +592,6 @@ function bet() {
         ["deal-view", 1],
         ["choice-view", 1],
       ]);
-      firstDeal();
       toggleViews([["deal-btn-view", 0]]);
     });
 }
@@ -605,7 +601,7 @@ async function playerActionLoop() {
   console.log(
     `gamestate.playerCards: ${JSON.stringify(gameState.playerCards)}`
   );
-  const eval = await evalHand(gameState.playerCards);
+  const eval = evalHand();
   if (eval != "safeSum") {
     console.log(`player ${eval}!!`);
     // show dealer down card, show dealer down card
@@ -621,6 +617,7 @@ async function playerActionLoop() {
   }
 }
 function getPlayerChoice() {
+  console.log("getPlayerChoice....");
   let pA = gameState.playerCards[0];
   let pB = gameState.playerCards[1];
   let dU = gameState.dealerCards[0];
@@ -654,7 +651,9 @@ function getPlayerChoice() {
 }
 
 async function doPlayerChoice(choice) {
+  console.log(`doPlayerChoice...${choice}`);
   if (choice === "hit") {
+    console.log("in the hit statement...");
     playerHit();
   } else if (choice === "stand") {
     console.log("stand....end player choice...start dealer choice");
@@ -688,27 +687,27 @@ async function initCheck() {
   if (pSum === 21 && dSum === 21) {
     await showDealerDown();
     // need modal or something to show push.
-    await resetGameState();
+    resetGameState();
     initialize();
   } else if (pSum != 21 && dSum === 21) {
     await showDealerDown();
     // need modal or something to show dealer win.
-    await resetGameState();
+    resetGameState();
     initialize();
   } else if (pSum === 21 && dSum != 21) {
     console.log("playerWin");
     await showDealerDown();
-    await resetGameState();
+    resetGameState();
     initialize();
   } else {
     return "proceed";
   }
 }
 
-function evalHand(cards) {
-  const sum = getSum(cards);
+function evalHand() {
   let eval;
-  if (gameState.turn === "dealer") {
+  if (gameState.turn === "player") {
+    const sum = getSum(gameState.playerCards);
     if (sum === 21) {
       eval = "blackjack";
     } else if (sum > 21) {
@@ -732,10 +731,10 @@ function evalHand(cards) {
 }
 
 async function dealerHitLoop() {
-  let eval = evalHand(gameState.dealerCards);
+  let eval = evalHand();
   while (eval === "dealerHit") {
     await hit();
-    eval = evalHand(gameState.dealerCards);
+    eval = evalHand();
   }
   console.log(`...dealer hit loop complete...dealer end was ${eval}`);
 }
@@ -748,6 +747,10 @@ function hit() {
         gameState.playerCards.push(cardVal);
         buildAssignCard(cardVal, "player-cards");
         resolve("hit complete");
+        console.log("hit complete");
+        console.log(
+          `gamestate.playerCards: ${JSON.stringify(gameState.playerCards)}`
+        );
       }, 500);
     } else {
       setTimeout(() => {
@@ -763,8 +766,9 @@ function hit() {
 async function playerHit() {
   toggleViews([["choice-view", 0]]);
   await hit();
-  const eval = evalHand(gameState.playerCards);
+  const eval = evalHand();
   if (eval != "safeSum") {
+    console.log("not a safe sum....");
     return initialize();
   } else {
     toggleViews([["choice-view", 1]]);
