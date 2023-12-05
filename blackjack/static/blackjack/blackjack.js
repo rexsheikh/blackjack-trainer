@@ -452,6 +452,9 @@ const gameState = {
   dealerBust: false,
   totalBet: 0,
   turn: "player",
+  splitHands: {},
+  splitQueue: [],
+  debugMode: true,
 };
 const cards = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
@@ -500,7 +503,11 @@ function getSum(cards) {
 async function initialize() {
   resetGameState();
   bet();
-  firstDeal();
+  if (gameState.debugMode) {
+    manualDealAssign(2, 2, 4, 4);
+  } else {
+    firstDeal();
+  }
   const checkDeal = await initCheck(); //do I need the await here to run the timeouts?
   console.log(
     `player cards: ${gameState.playerCards}...dealer cards: ${gameState.dealerCards}....turn: ${gameState.turn}`
@@ -568,6 +575,17 @@ function firstDeal() {
     }
   }
 }
+function manualDealAssign(pA, pB, dU, dD) {
+  gameState.playerCards = [pA, pB];
+  gameState.dealerCards = [dU, dD];
+  buildAssignCard(pA, "player-cards");
+  buildAssignCard(pB, "player-cards");
+  buildAssignCard(dU, "dealer-cards");
+  let cardEl = document.createElement("h2");
+  cardEl.id = "dealer-down";
+  cardEl.innerHTML = "dealerDown";
+  document.getElementById("dealer-cards").appendChild(cardEl);
+}
 function bet() {
   console.log("bet...");
   toggleViews([
@@ -596,26 +614,7 @@ function bet() {
     });
 }
 // *********PLAYER ACTIONS / REACTIONS ********
-async function playerActionLoop() {
-  console.log("starting player loop...");
-  console.log(
-    `gamestate.playerCards: ${JSON.stringify(gameState.playerCards)}`
-  );
-  const eval = evalHand();
-  if (eval != "safeSum") {
-    console.log(`player ${eval}!!`);
-    // show dealer down card, show dealer down card
-    // capture bets
-  } else {
-    console.log("getting new choice..");
-    const choice = await getPlayerChoice(
-      gameState.playerCards,
-      gameState.dealerCards
-    );
-    await doPlayerChoice(choice);
-    return playerActionLoop();
-  }
-}
+
 function getPlayerChoice() {
   console.log("getPlayerChoice....");
   let pA = gameState.playerCards[0];
@@ -670,7 +669,7 @@ async function doPlayerChoice(choice) {
     console.log("double....end player choice...start dealer choice");
     dealerHitLoop();
   } else if (choice === "split") {
-    console.log("split chosen...");
+    initSplit();
   }
 }
 function showDealerDown() {
@@ -786,4 +785,28 @@ async function playerHit() {
 
 function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
+}
+
+function initSplit() {
+  let [splitA, splitB] = gameState.playerCards;
+  gameState.splitHands["split-a"] = [splitA];
+  gameState.splitHands["split-b"] = [splitB];
+  // will need to replace this with an animation but delete and recreate for now
+  const playerCardDiv = document.getElementById("player-cards");
+  while (playerCardDiv.firstChild) {
+    playerCardDiv.removeChild(playerCardDiv.firstChild);
+  }
+  playerCardDiv.innerHTML = `
+  <div class="container">
+    <div class="row" id = "split-container">
+      <div class="col-md-6" id = "split-a">
+          <h2>splitA </h2>
+          <h2>${splitA}</h2>
+      </div>
+      <div class="col-md-6" id = "split-b">
+        <h2>splitB</h2>
+        <h2>${splitB}</h2>
+      </div>
+    </div>
+  </div>`;
 }
