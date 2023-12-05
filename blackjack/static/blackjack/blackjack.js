@@ -734,12 +734,14 @@ function evalHand() {
 async function dealerHitLoop() {
   console.log(`turn in dealer loop: ${gameState.turn}`);
   let eval = evalHand();
+  console.log(`dealer first eval is...${eval}`);
   let count = 0;
-  while (eval === "dealerHit") {
+  while (eval === "dealerHit" && count < 3) {
     console.log("in dealer hit loop...");
     await hit();
     eval = evalHand();
     console.log(`dealer next eval is...${eval}`);
+    count++;
   }
   console.log(`...dealer hit loop complete...dealer end was ${eval}`);
 }
@@ -774,8 +776,14 @@ async function playerHit() {
   const eval = evalHand();
   if (eval != "safeSum") {
     console.log("not a safe sum....");
-    return initialize();
+    await delay(1000);
+    initialize();
   } else {
+    console.log("safe sum, show choices...");
     toggleViews([["choice-view", 1]]);
   }
+}
+
+function delay(time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
 }
