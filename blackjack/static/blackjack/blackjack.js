@@ -444,15 +444,12 @@ const stratPairs = {
   },
 };
 const gameState = {
-  playerCards: [],
+  playerCards: {
+    "player-cards": [],
+  },
+  currHand: "player-cards",
   dealerCards: [],
-  playerWin: false,
-  dealerWin: false,
-  playerBust: false,
-  dealerBust: false,
   totalBet: 0,
-  turn: "player",
-  splitHands: {},
   splitQueue: [],
   debugMode: true,
 };
@@ -463,30 +460,54 @@ document.addEventListener("DOMContentLoaded", function () {
   initialize();
 });
 // ********* HELPER FUNCTIONS ********
-function buildAssignCard(cardVal, placement) {
+function buildAssignCard(cardVal) {
   let cardEl = document.createElement("h2");
   cardEl.innerHTML = cardVal;
-  document.getElementById(placement).appendChild(cardEl);
+  document.getElementById(gameState.currHand).appendChild(cardEl);
 }
 function getRandomCard() {
   let idx = Math.floor(Math.random() * cards.length);
   let cardVal = cards[idx];
   return cardVal;
 }
-function determineCorrect(pA, pB, dU, choice) {
-  // eval pairs
-  if (pA === pB) {
-    const correctChoice = stratPairs[pA][dU];
+function determineCorrect(choice) {
+  let currHand = gameState.playerCards[gameState.currHand];
+  let correctChoice;
+  let pA = currHand[0];
+  let pB = currHand[1];
+  let dU = gameState.dealerCards[0];
+  let sTotal = currHand.includes(11) ? true : false;
+  if (pA === pB && currHand === 2) {
+    correctChoice = stratPairs[pA][dU];
     return correctChoice === choice;
     // eval soft totals
-  } else if (pA === 11 || pB === 11) {
-    let sum = pA + pB;
-    const correctChoice = stratHardTotal[sum][dU];
+  } else if (sTotal && getSum(currHand) < 21) {
+    let sum = 0;
+    for (let idx = 0; idx < gameState.playerCards[currHand].length; idx++) {
+      if (currHand[idx] === 11) {
+        continue;
+      } else {
+        sum += currHand[idx];
+      }
+    }
+    correctChoice = stratSoftTotal[sum][dU];
     return correctChoice === choice;
-    // eval hard totals
   } else {
-    let sum = pA + pB;
-    const correctChoice = stratHardTotal[sum][dU];
+    let sum = 0;
+    if (sTotal) {
+      // put 11 at the back of the array with sort then get rid of it
+      // get the sum + 1 to replace 11 with one
+      for (let idx = 0; idx < gameState.playerCards[currHand].length; idx++) {
+        if (currHand[idx] === 11) {
+          sum += 1;
+        } else {
+          sum += currHand[idx];
+        }
+      }
+    } else {
+      sum = getSum(currHand);
+    }
+    correctChoice = stratHardTotal[sum][dU];
     return correctChoice === choice;
   }
 }
@@ -515,7 +536,7 @@ async function initialize() {
   if (checkDeal != "proceed") {
     console.log("init check not proceed...");
   } else {
-    getPlayerChoice();
+    getChoice();
   }
 }
 // wait half a second for end game animation then reset.
@@ -527,7 +548,7 @@ function resetGameState() {
     ["choice-view", 0],
     ["deal-btn-view", 0],
   ]);
-  gameState.playerCards = [];
+  gameState.playerCards = {};
   gameState.dealerCards = [];
   gameState.playerWin = false;
   gameState.dealerWin = false;
@@ -560,7 +581,7 @@ function firstDeal() {
   for (let i = 0; i < 4; i++) {
     let cardVal = getRandomCard();
     if (i % 2 == 0) {
-      gameState.playerCards.push(cardVal);
+      gameState.playerCards["player-cards"].push(cardVal);
       buildAssignCard(cardVal, "player-cards");
     } else {
       gameState.dealerCards.push(cardVal);
@@ -576,7 +597,7 @@ function firstDeal() {
   }
 }
 function manualDealAssign(pA, pB, dU, dD) {
-  gameState.playerCards = [pA, pB];
+  gameState.playerCards["player-cards"] = [pA, pB];
   gameState.dealerCards = [dU, dD];
   buildAssignCard(pA, "player-cards");
   buildAssignCard(pB, "player-cards");
@@ -615,34 +636,32 @@ function bet() {
 }
 // *********PLAYER ACTIONS / REACTIONS ********
 
-function getPlayerChoice() {
+function getChoice() {
   console.log("getPlayerChoice....");
-  let pA = gameState.playerCards[0];
-  let pB = gameState.playerCards[1];
-  let dU = gameState.dealerCards[0];
-  // get all the buttons to add event listeners. always show the hit and stand button. double/split conditionally.
-  const choiceBtns = document.querySelectorAll(".choice-btn");
+  // show hit and stand, always
   toggleViews([
     ["hit-btn", 1],
     ["stand-btn", 1],
     ["double-btn", 0],
     ["split-btn", 0],
   ]);
+  //show double/split conditionally.
   if (gameState.playerCards.length === 2) {
     toggleViews([["double-btn", 1]]);
   }
   if (pA === pB) {
     toggleViews([["split-btn", 1]]);
   }
-
+  // add event listeners to the buttons
+  const choiceBtns = document.querySelectorAll(".choice-btn");
   choiceBtns.forEach((btn) => {
     // Create a clone of each button to remove existing event listeners
     const cloneBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(cloneBtn, btn);
-
     cloneBtn.addEventListener("click", function () {
       const choice = cloneBtn.getAttribute("data-choice");
-      const correct = determineCorrect(pA, pB, dU, choice);
+      const correct = determineCorrect(choice);
+      console.log(`choice was ${choice} and that is ${correct}`);
       toggleViews([["choice-view", 0]]);
       doPlayerChoice(choice);
     });
@@ -705,8 +724,8 @@ async function initCheck() {
 
 function evalHand() {
   let eval;
-  if (gameState.turn === "player") {
-    const sum = getSum(gameState.playerCards);
+  if (gameState.currHand != "dealer-cards") {
+    const sum = getSum(gameState.playerCards[currHand]);
     if (sum === 21) {
       eval = "blackjack";
     } else if (sum > 21) {
@@ -745,41 +764,42 @@ async function dealerHitLoop() {
   console.log(`...dealer hit loop complete...dealer end was ${eval}`);
 }
 
-function hit() {
-  return new Promise((resolve) => {
-    if (gameState.turn === "player") {
-      setTimeout(() => {
-        let cardVal = getRandomCard();
-        gameState.playerCards.push(cardVal);
-        buildAssignCard(cardVal, "player-cards");
-        resolve("hit complete");
-        console.log("hit complete");
-        console.log(
-          `gamestate.playerCards: ${JSON.stringify(gameState.playerCards)}`
-        );
-      }, 500);
+async function hit() {
+  if (gameState.currHand != "dealer-cards") {
+    toggleViews([["choice-view", 0]]);
+    let cardVal = getRandomCard();
+    gameState.playerCards[currHand].push(cardVal);
+    buildAssignCard(cardVal);
+    console.log("hit complete");
+    console.log(
+      `gamestate.playerCards: ${JSON.stringify(gameState.playerCards)}`
+    );
+    let eval = evalHand();
+    console.log(`eval is: ${eval}`);
+    if (eval != "safeSum") {
+      console.log("not a safe sum....");
+      await delay(500);
+      initialize();
     } else {
-      setTimeout(() => {
-        let cardVal = getRandomCard();
-        gameState.dealerCards.push(cardVal);
-        buildAssignCard(cardVal, "dealer-cards");
-        resolve("hit complete");
-      }, 500);
+      console.log("safe sum, show choices...");
+      toggleViews([["choice-view", 1]]);
     }
-  });
-}
-
-async function playerHit() {
-  toggleViews([["choice-view", 0]]);
-  await hit();
-  const eval = evalHand();
-  if (eval != "safeSum") {
-    console.log("not a safe sum....");
-    await delay(1000);
-    initialize();
   } else {
-    console.log("safe sum, show choices...");
-    toggleViews([["choice-view", 1]]);
+    let eval = evalHand();
+    console.log(`dealer first eval is...${eval}`);
+    let count = 0;
+    while (eval === "dealerHit" && count < 3) {
+      console.log("in dealer hit loop...");
+      let cardVal = getRandomCard();
+      gameState.dealerCards.push(cardVal);
+      buildAssignCard(cardVal);
+      await delay(500);
+      console.log("dealer hit complete");
+      eval = evalHand();
+      console.log(`dealer next eval is...${eval}`);
+      count++;
+    }
+    console.log(`...dealer hit loop complete...dealer end was ${eval}`);
   }
 }
 
@@ -791,6 +811,7 @@ function initSplit() {
   let [splitA, splitB] = gameState.playerCards;
   gameState.splitHands["split-a"] = [splitA];
   gameState.splitHands["split-b"] = [splitB];
+  gameState.splitQueue = ["split-a", "split-b"];
   // will need to replace this with an animation but delete and recreate for now
   const playerCardDiv = document.getElementById("player-cards");
   while (playerCardDiv.firstChild) {
@@ -809,4 +830,63 @@ function initSplit() {
       </div>
     </div>
   </div>`;
+}
+function getPlayerSplitChoice(currHand) {
+  console.log("getPlayerChoice....");
+  let pA = gameState.splitHands[currHand][0];
+  let pB = gameState.splitHands[currHand][1];
+  let dU = gameState.dealerCards[0];
+  // get all the buttons to add event listeners. always show the hit and stand button. double/split conditionally.
+  const choiceBtns = document.querySelectorAll(".choice-btn");
+  toggleViews([
+    ["hit-btn", 1],
+    ["stand-btn", 1],
+    ["double-btn", 0],
+    ["split-btn", 0],
+  ]);
+  if (gameState.splitHands["currHand"] === 2) {
+    toggleViews([["double-btn", 1]]);
+  }
+  if (pA === pB) {
+    toggleViews([["split-btn", 1]]);
+  }
+
+  choiceBtns.forEach((btn) => {
+    // Create a clone of each button to remove existing event listeners
+    const cloneBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(cloneBtn, btn);
+
+    cloneBtn.addEventListener("click", function () {
+      const choice = cloneBtn.getAttribute("data-choice");
+      const correct = determineCorrect(pA, pB, dU, choice);
+      toggleViews([["choice-view", 0]]);
+      doPlayerChoice(choice);
+    });
+  });
+}
+async function splitLoop() {
+  let ctr = 0;
+  while (ctr < gameState.splitQueue.length) {
+    let currHand = gameState.splitQueue[ctr];
+    if (currHand.length === 1) {
+      await splitHit();
+      const eval = evalHand();
+      if (eval === "safeSum") {
+        getSplitChoice();
+      }
+    }
+  }
+}
+
+function evalSplitHand(currHand) {
+  let eval;
+  const sum = getSum(gameState.splitHands[currHand]);
+  if (sum === 21) {
+    eval = "blackjack";
+  } else if (sum > 21) {
+    eval = "bust";
+  } else {
+    eval = "safeSum";
+  }
+  return eval;
 }
