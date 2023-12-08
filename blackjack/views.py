@@ -98,25 +98,28 @@ def playerInfo(request):
         return JsonResponse(data, safe=False)
 
 
+@login_required
+@csrf_exempt
 def logChoice(request):
     if request.method == "POST":
         data = json.loads(request.body)
+        print(f"*****data: {data}********")
         user = User.objects.get(id=request.user.id)
         chart = data.get("chart")
         if chart == "hardTotal":
             newHT = HardTotal(user=user, hard_total=data.get(
                 "player"), dealer_up=data.get("dU"), correct=data.get("correct"))
             newHT.save()
-            return JsonResponse({"message: hit saved successfully"})
+            return JsonResponse({"message": "hard total captured successfully."}, status=201)
         elif chart == "softTotal":
             newST = SoftTotal(user=user, not_ace=data.get(
                 "player"), dealer_up=data.get("dealer_up"), correct=data.get("correct"))
             newST.save()
-            return JsonResponse({"message: hit saved successfully"})
+            return JsonResponse({"message": "soft total captured successfully."}, status=201)
         elif chart == "pairs":
             newPair = Pair(user=user, pair=data.get(
                 "player"), dealer_up=data.get("dU"), correct=data.get("correct"))
             newPair.save()
-            return JsonResponse({"message: pair saved successfully"})
+            return JsonResponse({"message": "pair captured successfully."}, status=201)
         else:
             print("no such chart....")

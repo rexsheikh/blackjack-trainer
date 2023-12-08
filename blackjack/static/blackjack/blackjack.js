@@ -544,19 +544,19 @@ function determineCorrect(choice) {
       sum = getSum(currHand);
       correctChoice = stratHardTotal[sum][dU];
     }
+    console.log(`choice was ${choice}. correct: ${correctChoice}`);
     let logCorrect = correctChoice === choice;
     logChoice("hardTotal", sum, dU, logCorrect);
   }
 }
 
 function logChoice(chart, player, dU, correct) {
-  // post to hardTotal endpoint
   fetch("/blackjack/logChoice", {
     method: "POST",
     body: JSON.stringify({
       chart: chart,
-      player: player,
-      dU: dU,
+      player: player.toString(),
+      dU: dU.toString(),
       correct: correct,
     }),
   })
@@ -716,7 +716,6 @@ function getChoice() {
     cloneBtn.addEventListener("click", function () {
       const choice = cloneBtn.getAttribute("data-choice");
       const correct = determineCorrect(choice);
-      console.log(`choice was ${choice} and that is ${correct}`);
       toggleViews([["choice-view", 0]]);
       doPlayerChoice(choice);
     });
@@ -731,17 +730,20 @@ async function doPlayerChoice(choice) {
   } else if (choice === "stand") {
     console.log("stand....end player choice...start dealer choice");
     gameState.currHand = "dealer-cards";
-    await showDealerDown();
+    showDealerDown();
     hit();
     // end player turn, dealer turn
   } else if (choice === "double") {
     let newBet = gameState.totalBet * 2;
     gameState.totalBet = newBet;
-    await playerHit();
-    await showDealerDown();
+    hit();
+    await delay(1000);
+    showDealerDown();
     console.log(`total bet is now: ${gameState.totalBet}`);
     console.log("double....end player choice...start dealer choice");
-    dealerHitLoop();
+    // end the player turn and enter the dealer hit loop
+    gameState.currHand = "dealer-cards";
+    hit();
   } else if (choice === "split") {
     initSplit();
   }
