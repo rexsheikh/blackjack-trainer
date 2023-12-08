@@ -1,13 +1,13 @@
 1. Necessary features:
    => user has to bet.
 2. Next up:
-   => stand, double, (maybe) split
-   => dealer hit loop
-   => captures and models
-   => start animations, assets
+   => finish split logic
+   => start win/loss and blackjack captures
+   => cash and points and rank captures
+   => start to build out stats and strat chart
 
 3. Features
-   a. peak modal
+   a. peek modal
    b. instant feedback (toggle on or off) (or just show in rank)
    c. show total or not
    d. unlockables

@@ -14,6 +14,7 @@ class Hand(models.Model):
     id = models.IntegerField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     win = models.BooleanField()
+    blackjack = models.BooleanField()
 
 
 class HardTotal(models.Model):

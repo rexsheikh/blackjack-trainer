@@ -555,8 +555,8 @@ function logChoice(chart, player, dU, correct) {
     method: "POST",
     body: JSON.stringify({
       chart: chart,
-      player: player.toString(),
-      dU: dU.toString(),
+      player: player,
+      dU: dU,
       correct: correct,
     }),
   })
