@@ -8,8 +8,9 @@ urlpatterns = [
     path("login", views.login_view, name="login"),
     path("logout", views.logout_view, name="logout"),
     path("register", views.register, name="register"),
-    path("blackjack", views.blackjack, name="blackjack")
-
-
+    path("blackjack", views.blackjack, name="blackjack"),
+    # API routes
+    path("blackjack/playerInfo", views.playerInfo, name="playerInfo"),
+    path("blackjack/logChoice", views.logChoice, name="logChoice")
 
 ]

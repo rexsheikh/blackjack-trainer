@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .models import User, Hand
+from .models import *
 
 
 def index(request):
@@ -71,11 +71,6 @@ def register(request):
 @login_required
 @csrf_exempt
 def blackjack(request):
-    #     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    # dealer_up = models.IntegerField()
-    # player_a = models.IntegerField()
-    # player_b = models.IntegerField()
-
     if request.method == "GET":
         return render(request, "blackjack/blackjack.html")
     elif request.method == "POST":
@@ -89,3 +84,39 @@ def blackjack(request):
         )
         newHand.save()
         return JsonResponse({"message": "Hand captured successfully"}, status=201)
+
+
+@login_required
+@csrf_exempt
+def playerInfo(request):
+    if request.method == "GET":
+        user = User(id=request.user.id)
+        data = {
+            "cash": user.cash,
+            "points": user.points
+        }
+        return JsonResponse(data, safe=False)
+
+
+def logChoice(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        user = User.objects.get(id=request.user.id)
+        chart = data.get("chart")
+        if chart == "hardTotal":
+            newHT = HardTotal(user=user, hard_total=data.get(
+                "player"), dealer_up=data.get("dU"), correct=data.get("correct"))
+            newHT.save()
+            return JsonResponse({"message: hit saved successfully"})
+        elif chart == "softTotal":
+            newST = SoftTotal(user=user, not_ace=data.get(
+                "player"), dealer_up=data.get("dealer_up"), correct=data.get("correct"))
+            newST.save()
+            return JsonResponse({"message: hit saved successfully"})
+        elif chart == "pairs":
+            newPair = Pair(user=user, pair=data.get(
+                "player"), dealer_up=data.get("dU"), correct=data.get("correct"))
+            newPair.save()
+            return JsonResponse({"message: pair saved successfully"})
+        else:
+            print("no such chart....")
