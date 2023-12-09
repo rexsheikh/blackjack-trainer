@@ -123,3 +123,16 @@ def logChoice(request):
             return JsonResponse({"message": "pair captured successfully."}, status=201)
         else:
             print("no such chart....")
+
+
+@login_required
+@csrf_exempt
+def logHand(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        print(f"*****data: {data}********")
+        user = User.objects.get(id=request.user.id)
+        newHand = Hand(user=user, win=data.get("win"),
+                       blackjack=data.get("blackjack"))
+        newHand.save()
+        return JsonResponse({"message": "hand captured successfully."}, status=201)

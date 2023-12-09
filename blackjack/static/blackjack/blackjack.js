@@ -565,7 +565,19 @@ function logChoice(chart, player, dU, correct) {
       console.log(result);
     });
 }
-
+function logHand(win, blackjack) {
+  fetch("/blackjack/logHand", {
+    method: "POST",
+    body: JSON.stringify({
+      win: win,
+      blackjack: blackjack,
+    }),
+  })
+    .then((response) => response.json())
+    .then((result) => {
+      console.log(result);
+    });
+}
 function getSum(cards) {
   let sum = cards.reduce(
     (accumulator, currentValue) => accumulator + currentValue,
@@ -766,11 +778,14 @@ async function initCheck() {
     console.log("***init dealer win***");
     await delay(1000);
     showDealerDown();
+    logHand(0, 0);
     resetGameState();
     initialize();
   } else if (pSum === 21 && dSum != 21) {
     console.log("playerWin");
     await delay(1000);
+    showDealerDown();
+    logHand(1, 1);
     resetGameState();
     initialize();
   } else {
@@ -812,15 +827,8 @@ async function hit() {
     gameState.playerCards[gameState.currHand].push(cardVal);
     buildAssignCard(cardVal);
     console.log("hit complete");
-    console.log(
-      `gamestate.playerCards: ${JSON.stringify(
-        gameState.playerCards[gameState.currHand]
-      )}`
-    );
-    let eval = evalHand();
-    console.log(`eval is: ${eval}`);
-    if (eval != "safeSum") {
-      // playerHandEval
+    gameState.pHandEval = evalHand();
+    if (gameState.pHandEval != "safeSum") {
       console.log("not a safe sum....");
       await delay(1000);
       gameState.currHand = "dealer-cards";
@@ -832,19 +840,24 @@ async function hit() {
       toggleViews([["choice-view", 1]]);
     }
   } else {
-    let eval = evalHand();
-    console.log(`dealer first eval is...${eval}`);
-    while (eval === "dealerHit") {
+    gameState.dHandEval = evalHand();
+    console.log(`dealer first eval is...${gameState.dHandEval}`);
+    while (gameState.dHandEval === "dealerHit") {
       await delay(1000);
       console.log("in dealer hit loop...");
       let cardVal = getRandomCard();
       gameState.dealerCards.push(cardVal);
       buildAssignCard(cardVal);
       console.log("dealer hit complete");
-      eval = evalHand();
-      console.log(`dealer next eval is...${eval}`);
+      gameState.dHandEval = evalHand();
+      console.log(`dealer next eval is...${gameState.dHandEval}`);
     }
-    console.log(`...dealer hit loop complete...dealer end was ${eval}`);
+    await delay(1000);
+    // determine winner;
+    initialize();
+    console.log(
+      `...dealer hit loop complete...dealer end was ${gameState.dHandEval}`
+    );
   }
 }
 
