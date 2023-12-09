@@ -593,7 +593,7 @@ async function initialize() {
   resetGameState();
   bet();
   if (gameState.debugMode) {
-    manualDealAssign(2, 3, 4, 5);
+    manualDealAssign(2, 2, 4, 5);
   } else {
     firstDeal();
   }
@@ -702,6 +702,7 @@ function bet() {
 
 function getChoice() {
   console.log("getPlayerChoice....");
+  console.log(`current hand: ${gameState.currHand}`);
   // show hit and stand, always
   toggleViews([
     ["hit-btn", 1],
@@ -740,8 +741,8 @@ async function doPlayerChoice(choice) {
     console.log("in the hit statement...");
     hit();
   } else if (choice === "stand") {
-    console.log("stand....end player choice...start dealer choice");
-    gameState.currHand = "dealer-cards";
+    gameState.currHand =
+      gameState.currHand === "split-a" ? "split-b" : "dealer-cards";
     showDealerDown();
     hit();
     // end player turn, dealer turn
@@ -831,10 +832,15 @@ async function hit() {
     if (gameState.pHandEval != "safeSum") {
       console.log("not a safe sum....");
       await delay(1000);
-      gameState.currHand = "dealer-cards";
-      console.log("changing turn to dealer and running hit....");
-      showDealerDown();
-      hit();
+      gameState.currHand =
+        gameState.currHand === "split-a" ? "split-b" : "dealer-cards";
+      console.log(`changing turn to ${gameState.currHand}...`);
+      if (gameState.currHand === "dealer-cards") {
+        showDealerDown();
+        hit();
+      } else {
+        hit();
+      }
     } else {
       console.log("safe sum, show choices...");
       toggleViews([["choice-view", 1]]);
@@ -844,11 +850,9 @@ async function hit() {
     console.log(`dealer first eval is...${gameState.dHandEval}`);
     while (gameState.dHandEval === "dealerHit") {
       await delay(1000);
-      console.log("in dealer hit loop...");
       let cardVal = getRandomCard();
       gameState.dealerCards.push(cardVal);
       buildAssignCard(cardVal);
-      console.log("dealer hit complete");
       gameState.dHandEval = evalHand();
       console.log(`dealer next eval is...${gameState.dHandEval}`);
     }
