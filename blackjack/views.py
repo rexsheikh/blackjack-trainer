@@ -90,11 +90,12 @@ def blackjack(request):
 @csrf_exempt
 def playerInfo(request):
     if request.method == "GET":
-        user = User(id=request.user.id)
+        user = User.objects.get(id=request.user.id)
         data = {
             "cash": user.cash,
             "points": user.points
         }
+        print(f"{user.id} | {user.points}")
         return JsonResponse(data, safe=False)
 
 
@@ -141,11 +142,11 @@ def logHand(request):
 @login_required
 @csrf_exempt
 def updateCashPoints(request):
-    if request.method == "POST":
+    if request.method == "PUT":
         data = json.loads(request.body)
-        print(f"*****data: {data}********")
+        print(f"*****update cash points data: {data}********")
         user = User.objects.get(id=request.user.id)
-        user.cash = data.get("newCash")
-        user.points = data.get("newPoints")
+        user.cash = data.get("cash")
+        user.points = data.get("points")
         user.save()
         return JsonResponse({"message": "points and cash updated successfully"}, status=201)

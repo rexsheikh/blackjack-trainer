@@ -21,12 +21,8 @@
    d. unlockables
    e. rank
 
-4. investigate
-   a. how many times can one split?
-   b. better understand soft totals chart (is it a sum?)
-   c. build a queue for split order operations
+admin:
 
-5. admin:
-   - name: super
-   - login: super
-   - why can't admin see the other models?
+- name: super
+- login: super
+- why can't admin see the other models?

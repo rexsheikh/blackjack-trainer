@@ -482,6 +482,9 @@ function getRankCash() {
     });
 }
 function updateCashPoints() {
+  console.log(
+    `updating cash to ${gamestate.cash} and points to ${gamestate.points}`
+  );
   fetch("/blackjack/updateCashPoints", {
     method: "PUT",
     body: JSON.stringify({
@@ -700,10 +703,7 @@ function bet() {
   betBtns.forEach(function (btn) {
     btn.addEventListener("click", function () {
       betHand += parseInt(btn.getAttribute("data-chip-val"), 10);
-      gamestate.userCash;
       gamestate.totalBet = betHand;
-      gamestate.cash -= totalBet;
-      document.getElementById("player-cash").innerText = gamestate.cash;
       toggleViews([["deal-btn-view", 1]]);
     });
   });
@@ -715,6 +715,8 @@ function bet() {
         ["deal-view", 1],
         ["choice-view", 1],
       ]);
+      gamestate.cash -= gamestate.totalBet;
+      document.getElementById("player-cash").innerText = gamestate.cash;
       toggleViews([["deal-btn-view", 0]]);
     });
 }
@@ -876,54 +878,64 @@ async function hit() {
       console.log(`dealer next eval is...${gamestate.dHandEval}`);
     }
     await delay(1000);
-    let determineWin = determineEndWinner();
-    initialize();
+    determineEndWinner();
+    // initialize();
   }
 }
 
 function determineEndWinner() {
+  console.log("determining end winner....");
   // eval non-split hand
+  let win;
   if (!gamestate.playerCards["split-a"]) {
-    if (pHandEval["player-cards"] === "bust") {
+    console.log("in the player cards statement....");
+    if (gamestate.pHandEval["player-cards"] === "bust") {
       logHand(false, false);
-    } else if (dHandEval === "safeSum" && pHandEval === "safeSum") {
+    } else {
       let pSum = getSum(gamestate.playerCards["player-cards"]);
       let dSum = getSum(gamestate.dealerCards);
-      let win = pSum > dSum ? true : false;
+      win = pSum > dSum ? true : false;
       logHand(win, false);
-      if (win) {
-        gamestate.cash += gamestate.totalBet * 2;
-        updateCashPoints();
-      }
+    }
+    if (win) {
+      gamestate.cash += gamestate.totalBet * 2;
+      updateCashPoints();
+    } else {
+      updateCashPoints();
     }
     // eval split hand
   } else {
-    if (pHandEval["split-a"] === "bust") {
+    let wina, winb;
+    if (gamestate.pHandEval["split-a"] === "bust") {
       logHand(false, false);
-    } else if (dHandEval === "safeSum" && pHandEval === "safeSum") {
+    } else {
       let pSum = getSum(gamestate.playerCards["split-a"]);
       let dSum = getSum(gamestate.dealerCards);
-      let win = pSum > dSum ? true : false;
-      logHand(win, false);
+      wina = pSum > dSum ? true : false;
+      logHand(wina, false);
     }
-    if (pHandEval["split-b"] === "bust") {
+    if (wina) {
+      gamestate.cash += gamestate.totalBet * 2;
+      updateCashPoints();
+    } else {
+      updateCashPoints();
+    }
+
+    if (gamestate.pHandEval["split-b"] === "bust") {
       logHand(false, false);
-    } else if (dHandEval === "safeSum" && pHandEval === "safeSum") {
+    } else {
       let pSum = getSum(gamestate.playerCards["split-b"]);
       let dSum = getSum(gamestate.dealerCards);
       let win = pSum > dSum ? true : false;
       logHand(win, false);
-      if (win) {
+      if (winb) {
         gamestate.cash += gamestate.totalBet * 2;
+        updateCashPoints();
+      } else {
         updateCashPoints();
       }
     }
-    // always log points here
   }
-  // if player and dealer bust => loss
-  // if player sum < dealerum => loss
-  // if equal => push
-  // if player sum > dealer sum || dealer bust => win
 }
 
 async function initSplit() {
