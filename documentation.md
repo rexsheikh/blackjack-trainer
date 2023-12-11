@@ -2,9 +2,17 @@
    => user has to bet.
 2. Next up:
    => finish split logic
-   => start win/loss and blackjack captures
-   => cash and points and rank captures
-   => start to build out stats and strat chart
+
+   - can handle two split hands
+     => start win/loss and blackjack captures
+   - win loss in init
+   - decide whether to keep sum for determining end winner or something else
+   - split logic needs to eval winner then move on
+   - => cash and points and rank captures
+     => start to build out stats and strat chart
+     => check if points reach new rank after each hand
+     => create points incrementing feature and a cash bonus on reaching a new rank
+     => split and double bet logic
 
 3. Features
    a. peek modal

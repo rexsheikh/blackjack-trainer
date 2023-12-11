@@ -13,6 +13,8 @@ urlpatterns = [
     path("blackjack/playerInfo", views.playerInfo, name="playerInfo"),
     path("blackjack/logChoice", views.logChoice, name="logChoice"),
     path("blackjack/logHand", views.logHand, name="logHand"),
+    path("blackjack/updateCashPoints",
+         views.updateCashPoints, name="updateCashPoints"),
 
 
 ]

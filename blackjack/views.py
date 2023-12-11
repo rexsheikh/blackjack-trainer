@@ -136,3 +136,16 @@ def logHand(request):
                        blackjack=data.get("blackjack"))
         newHand.save()
         return JsonResponse({"message": "hand captured successfully."}, status=201)
+
+
+@login_required
+@csrf_exempt
+def updateCashPoints(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        print(f"*****data: {data}********")
+        user = User.objects.get(id=request.user.id)
+        user.cash = data.get("newCash")
+        user.points = data.get("newPoints")
+        user.save()
+        return JsonResponse({"message": "points and cash updated successfully"}, status=201)
