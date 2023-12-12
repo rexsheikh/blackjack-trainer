@@ -449,7 +449,7 @@ const gamestate = {
   },
   currHand: "player-cards",
   pHandEval: {},
-  dHandEval: 0,
+  dHandEval: {},
   dealerCards: [],
   cash: 0,
   points: 0,
@@ -816,30 +816,24 @@ async function initCheck() {
 }
 
 function evalHand() {
-  let eval;
   if (gamestate.currHand != "dealer-cards") {
     const sum = getSum(gamestate.playerCards[gamestate.currHand]);
-    if (sum === 21) {
-      eval = "blackjack";
-    } else if (sum > 21) {
-      eval = "bust";
-    } else {
-      eval = "safeSum";
-    }
+    return sum;
   } else {
+    let dealerState;
     const sum = getSum(gamestate.dealerCards);
     let dealerSoftTotal = gamestate.dealerCards.includes(11) ? true : false;
     if (sum === 21) {
-      eval = "blackjack";
+      dealerState = "blackjack";
     } else if (sum > 21) {
-      eval = "bust";
+      dealerState = "bust";
     } else if (sum < 17 || (sum === 17 && dealerSoftTotal)) {
-      eval = "safeSum";
+      dealerState = "safeSum";
     } else if (sum >= 17) {
-      eval = "dealerStand";
+      dealerState = "dealerStand";
     }
+    return {dealerState, sum};
   }
-  return eval;
 }
 
 async function hit() {
@@ -850,7 +844,10 @@ async function hit() {
     buildAssignCard(cardVal);
     console.log("hit complete");
     gamestate.pHandEval[gamestate.currHand] = evalHand();
-    if (gamestate.pHandEval[gamestate.currHand] != "safeSum") {
+    if (
+      gamestate.pHandEval[gamestate.currHand] === 21 ||
+      gamestate.pHandEval[gamestate.currHand] > 21
+    ) {
       console.log("not a safe sum....");
       await delay(1000);
       gamestate.currHand =
@@ -868,26 +865,50 @@ async function hit() {
     }
   } else {
     gamestate.dHandEval = evalHand();
-    console.log(`dealer first eval is...${gamestate.dHandEval}`);
-    while (gamestate.dHandEval === "safeSum") {
+    console.log(
+      `dealer first eval is...${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
+    );
+    while (gamestate.dHandEval.dealerState === "safeSum") {
       await delay(1000);
       let cardVal = getRandomCard();
       gamestate.dealerCards.push(cardVal);
       buildAssignCard(cardVal);
       gamestate.dHandEval = evalHand();
-      console.log(`dealer next eval is...${gamestate.dHandEval}`);
+      console.log(
+        `dealer next eval is...${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
+      );
     }
     await delay(1000);
     await determineEndWinner();
-    initialize();
+    // await delay(1000);
+    // initialize();
   }
 }
 
 function determineEndWinner() {
   console.log("determining end winner....");
   console.log(
-    `player hand is: ${gamestate.pHandEval["player-cards"]} and dealer hand is ${gamestate.dHandEval}`
+    `player hand is: ${gamestate.pHandEval["player-cards"]} and dealer hand is ${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
   );
+  // dealer wins or push
+  if (
+    (gamestate.dHandEval.sum >= gamestate.pHandEval["player-cards"] &&
+      gamestate.dHandEval.dealerState != "bust") ||
+    gamestate.pHandEval["player-cards"] >= 21
+  ) {
+    console.log("logging dealer wins or push...");
+    logHand(false, false);
+    updateCashPoints();
+    // player wins
+  } else if (
+    gamestate.pHandEval["player-cards"] > gamestate.dHandEval.sum &&
+    gamestate.pHandEval["player-cards"] <= 21
+  ) {
+    console.log("logging player win...");
+    logHand(false, false);
+    gamestate.cash += gamestate.totalBet * 2;
+    updateCashPoints();
+  }
 
   return Promise.resolve("captured end updates");
 }
