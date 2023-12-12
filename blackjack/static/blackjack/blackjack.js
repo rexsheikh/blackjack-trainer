@@ -449,7 +449,7 @@ const gamestate = {
   },
   currHand: "player-cards",
   pHandEval: {},
-  dHandEval: "",
+  dHandEval: 0,
   dealerCards: [],
   cash: 0,
   points: 0,
@@ -613,7 +613,7 @@ async function initialize() {
   resetGameState();
   bet();
   if (gamestate.debugMode) {
-    manualDealAssign(2, 2, 4, 5);
+    manualDealAssign(2, 9, 4, 5);
   } else {
     firstDeal();
   }
@@ -834,7 +834,7 @@ function evalHand() {
     } else if (sum > 21) {
       eval = "bust";
     } else if (sum < 17 || (sum === 17 && dealerSoftTotal)) {
-      eval = "dealerHit";
+      eval = "safeSum";
     } else if (sum >= 17) {
       eval = "dealerStand";
     }
@@ -869,7 +869,7 @@ async function hit() {
   } else {
     gamestate.dHandEval = evalHand();
     console.log(`dealer first eval is...${gamestate.dHandEval}`);
-    while (gamestate.dHandEval === "dealerHit") {
+    while (gamestate.dHandEval === "safeSum") {
       await delay(1000);
       let cardVal = getRandomCard();
       gamestate.dealerCards.push(cardVal);
@@ -878,64 +878,18 @@ async function hit() {
       console.log(`dealer next eval is...${gamestate.dHandEval}`);
     }
     await delay(1000);
-    determineEndWinner();
-    // initialize();
+    await determineEndWinner();
+    initialize();
   }
 }
 
 function determineEndWinner() {
   console.log("determining end winner....");
-  // eval non-split hand
-  let win;
-  if (!gamestate.playerCards["split-a"]) {
-    console.log("in the player cards statement....");
-    if (gamestate.pHandEval["player-cards"] === "bust") {
-      logHand(false, false);
-    } else {
-      let pSum = getSum(gamestate.playerCards["player-cards"]);
-      let dSum = getSum(gamestate.dealerCards);
-      win = pSum > dSum ? true : false;
-      logHand(win, false);
-    }
-    if (win) {
-      gamestate.cash += gamestate.totalBet * 2;
-      updateCashPoints();
-    } else {
-      updateCashPoints();
-    }
-    // eval split hand
-  } else {
-    let wina, winb;
-    if (gamestate.pHandEval["split-a"] === "bust") {
-      logHand(false, false);
-    } else {
-      let pSum = getSum(gamestate.playerCards["split-a"]);
-      let dSum = getSum(gamestate.dealerCards);
-      wina = pSum > dSum ? true : false;
-      logHand(wina, false);
-    }
-    if (wina) {
-      gamestate.cash += gamestate.totalBet * 2;
-      updateCashPoints();
-    } else {
-      updateCashPoints();
-    }
+  console.log(
+    `player hand is: ${gamestate.pHandEval["player-cards"]} and dealer hand is ${gamestate.dHandEval}`
+  );
 
-    if (gamestate.pHandEval["split-b"] === "bust") {
-      logHand(false, false);
-    } else {
-      let pSum = getSum(gamestate.playerCards["split-b"]);
-      let dSum = getSum(gamestate.dealerCards);
-      let win = pSum > dSum ? true : false;
-      logHand(win, false);
-      if (winb) {
-        gamestate.cash += gamestate.totalBet * 2;
-        updateCashPoints();
-      } else {
-        updateCashPoints();
-      }
-    }
-  }
+  return Promise.resolve("captured end updates");
 }
 
 async function initSplit() {

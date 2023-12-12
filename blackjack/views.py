@@ -95,7 +95,6 @@ def playerInfo(request):
             "cash": user.cash,
             "points": user.points
         }
-        print(f"{user.id} | {user.points}")
         return JsonResponse(data, safe=False)
 
 
