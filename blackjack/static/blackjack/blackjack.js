@@ -444,13 +444,14 @@ const stratPairs = {
   },
 };
 const gamestate = {
-  playerCards: {
-    "player-cards": [],
+  pCards: {
+    "first-deal": [],
   },
-  currHand: "player-cards",
+  queue: ["first-deal", "dealer-cards"],
+  queueCtr: 0,
   pHandEval: {},
   dHandEval: {},
-  dealerCards: [],
+  dCards: [],
   cash: 0,
   points: 0,
   totalBet: 0,
@@ -458,6 +459,7 @@ const gamestate = {
 };
 const cards = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
+// ****** API Requests **********
 function getRankCash() {
   fetch(`blackjack/playerInfo`)
     .then((response) => response.json())
@@ -493,83 +495,6 @@ function updateCashPoints() {
     }),
   });
 }
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("dom loaded...");
-  initialize();
-});
-// ********* HELPER FUNCTIONS ********
-function buildAssignCard(cardVal, placement = gamestate.currHand) {
-  let cardEl = document.createElement("h2");
-  cardEl.innerHTML = cardVal;
-  document.getElementById(placement).appendChild(cardEl);
-}
-function getRandomCard() {
-  let idx = Math.floor(Math.random() * cards.length);
-  let cardVal = cards[idx];
-  return cardVal;
-}
-function delay(time) {
-  return new Promise((resolve) => setTimeout(resolve, time));
-}
-function determineCorrect(choice) {
-  let currHand = gamestate.playerCards[gamestate.currHand];
-  let correctChoice;
-  let pA = currHand[0];
-  let pB = currHand[1];
-  let dU = gamestate.dealerCards[0];
-  let sTotal = currHand.includes(11) ? true : false;
-  // pairs
-  if (pA === pB && currHand.length === 2) {
-    correctChoice = stratPairs[pA][dU];
-    let logCorrect = correctChoice === choice;
-    logChoice("pairs", pA, dU, logCorrect);
-    if (logCorrect) {
-      gamestate.points += 1;
-    }
-    // soft totals (with sum < 21)
-  } else if (sTotal && getSum(currHand) < 21) {
-    let sum = 0;
-    for (let idx = 0; idx < currHand.length; idx++) {
-      if (currHand[idx] === 11) {
-        continue;
-      } else {
-        sum += currHand[idx];
-      }
-    }
-    correctChoice = stratSoftTotal[sum][dU];
-    let logCorrect = correctChoice === choice;
-    if (logCorrect) {
-      gamestate.points += 1;
-    }
-    logChoice("softTotal", sum, dU, logCorrect);
-
-    // hard totals
-  } else {
-    // if there is an ace present and it pushes the sum
-    // over 21, then treat it as a 1 (instead of 11) and eval
-    // hard total
-    let sum = 0;
-    if (sTotal) {
-      // put 11 at the back of the array with sort then get rid of it
-      // get the sum + 1 to replace 11 with one
-      for (let idx = 0; idx < currHand.length; idx++) {
-        if (currHand[idx] === 11) {
-          sum += 1;
-        } else {
-          sum += currHand[idx];
-        }
-      }
-      correctChoice = stratSoftTotal[sum][dU];
-    } else {
-      sum = getSum(currHand);
-      correctChoice = stratHardTotal[sum][dU];
-    }
-    console.log(`choice was ${choice}. correct: ${correctChoice}`);
-    let logCorrect = correctChoice === choice;
-    logChoice("hardTotal", sum, dU, logCorrect);
-  }
-}
-
 function logChoice(chart, player, dU, correct) {
   fetch("/blackjack/logChoice", {
     method: "POST",
@@ -598,6 +523,80 @@ function logHand(win, blackjack) {
       console.log(result);
     });
 }
+// ********* HELPER FUNCTIONS ********
+function buildAssignCard(cardVal, placement = gamestate.queue[queueCtr]) {
+  let cardEl = document.createElement("h2");
+  cardEl.innerHTML = cardVal;
+  document.getElementById(placement).appendChild(cardEl);
+}
+function getRandomCard() {
+  let idx = Math.floor(Math.random() * cards.length);
+  let cardVal = cards[idx];
+  return cardVal;
+}
+function delay(time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
+function determineCorrect(choice) {
+  // get the current hand string, then get the list of cards in the player hand object.
+  let currHand = gamestate.queue[queueCtr];
+  let pCards = gamestate.pCards[currHand];
+  let correctChoice;
+  let pA = pCards[0];
+  let pB = pCards[1];
+  let dU = gamestate.dCards[0];
+  let sTotal = pCards.includes(11) ? true : false;
+  // pairs
+  if (pA === pB && pCards.length === 2) {
+    correctChoice = stratPairs[pA][dU];
+    let logCorrect = correctChoice === choice;
+    logChoice("pairs", pA, dU, logCorrect);
+    if (logCorrect) {
+      gamestate.points += 1;
+    }
+    // soft totals (with sum < 21)
+  } else if (sTotal && getSum(currHand) < 21) {
+    let sum = 0;
+    for (let idx = 0; idx < pCards.length; idx++) {
+      if (pCards[idx] === 11) {
+        continue;
+      } else {
+        sum += pCards[idx];
+      }
+    }
+    correctChoice = stratSoftTotal[sum][dU];
+    let logCorrect = correctChoice === choice;
+    if (logCorrect) {
+      gamestate.points += 1;
+    }
+    logChoice("softTotal", sum, dU, logCorrect);
+
+    // hard totals
+  } else {
+    // if there is an ace present and it pushes the sum
+    // over 21, then treat it as a 1 (instead of 11) and eval
+    // hard total
+    let sum = 0;
+    if (sTotal) {
+      // put 11 at the back of the array with sort then get rid of it
+      // get the sum + 1 to replace 11 with one
+      for (let idx = 0; idx < pCards.length; idx++) {
+        if (pCards[idx] === 11) {
+          sum += 1;
+        } else {
+          sum += pCards[idx];
+        }
+      }
+      correctChoice = stratSoftTotal[sum][dU];
+    } else {
+      sum = getSum(currHand);
+      correctChoice = stratHardTotal[sum][dU];
+    }
+    console.log(`choice was ${choice}. correct: ${correctChoice}`);
+    let logCorrect = correctChoice === choice;
+    logChoice("hardTotal", sum, dU, logCorrect);
+  }
+}
 function getSum(cards) {
   let sum = cards.reduce(
     (accumulator, currentValue) => accumulator + currentValue,
@@ -624,7 +623,6 @@ async function initialize() {
     getChoice();
   }
 }
-// wait half a second for end game animation then reset.
 
 function resetGameState() {
   toggleViews([
@@ -633,13 +631,17 @@ function resetGameState() {
     ["choice-view", 0],
     ["deal-btn-view", 0],
   ]);
-  gamestate.playerCards = {
-    "player-cards": [],
+  gamestate.pCards = {
+    "first-deal": [],
   };
-  gamestate.currHand = "player-cards";
-  gamestate.dealerCards = [];
+  gamestate.queue = "first-deal";
+  gamestate.dCards = [];
   gamestate.totalBet = 0;
-  const playerCardDiv = document.getElementById("player-cards");
+  gamestate.cash = 0;
+  gamestate.points = 0;
+  gamestate.pHandEval = {};
+  gamestate.dHandEval = {};
+  const playerCardDiv = document.getElementById("first-deal");
   const dealerCardDiv = document.getElementById("dealer-cards");
   while (playerCardDiv.firstChild) {
     playerCardDiv.removeChild(playerCardDiv.firstChild);
@@ -665,10 +667,10 @@ function firstDeal() {
   for (let i = 0; i < 4; i++) {
     let cardVal = getRandomCard();
     if (i % 2 == 0) {
-      gamestate.playerCards["player-cards"].push(cardVal);
-      buildAssignCard(cardVal, "player-cards");
+      gamestate.pCards["first-deal"].push(cardVal);
+      buildAssignCard(cardVal, "first-deal");
     } else {
-      gamestate.dealerCards.push(cardVal);
+      gamestate.dCards.push(cardVal);
       if (i === 1) {
         buildAssignCard(cardVal, "dealer-cards");
       } else {
@@ -681,16 +683,46 @@ function firstDeal() {
   }
 }
 function manualDealAssign(pA, pB, dU, dD) {
-  gamestate.playerCards["player-cards"] = [pA, pB];
-  gamestate.dealerCards = [dU, dD];
-  buildAssignCard(pA, "player-cards");
-  buildAssignCard(pB, "player-cards");
+  gamestate.pCards["first-deal"] = [pA, pB];
+  gamestate.dCards = [dU, dD];
+  buildAssignCard(pA, "first-deal");
+  buildAssignCard(pB, "first-deal");
   buildAssignCard(dU, "dealer-cards");
   let cardEl = document.createElement("h2");
   cardEl.id = "dealer-down";
   cardEl.innerHTML = "dealerDown";
   document.getElementById("dealer-cards").appendChild(cardEl);
 }
+
+async function initCheck() {
+  let pSum = getSum(gamestate.pCards["first-deal"]);
+  let dSum = getSum(gamestate.dCards);
+  if (pSum === 21 && dSum === 21) {
+    logHand(false, false);
+    console.log("***init push***");
+    await delay(1000);
+    showDealerDown();
+    resetGameState();
+    initialize();
+  } else if (pSum != 21 && dSum === 21) {
+    console.log("***init dealer blackjack***");
+    logHand(false, false);
+    await delay(1000);
+    showDealerDown();
+    logHand(0, 0);
+    resetGameState();
+    initialize();
+  } else if (pSum === 21 && dSum != 21) {
+    console.log("player blackjack!");
+    logHand(true, true);
+    await delay(1000);
+    showDealerDown();
+    await processEndState(true, true);
+  } else {
+    return "proceed";
+  }
+}
+// *********PLAYER ACTIONS / REACTIONS ********
 function bet() {
   console.log("bet...");
   toggleViews([
@@ -720,11 +752,12 @@ function bet() {
       toggleViews([["deal-btn-view", 0]]);
     });
 }
-// *********PLAYER ACTIONS / REACTIONS ********
-
 function getChoice() {
   console.log("getPlayerChoice....");
-  console.log(`current hand: ${gamestate.currHand}`);
+  let currHand = gamestate.pCards[gamestate.queue[gamestate.queueCtr]];
+  console.log(
+    `current hand: ${gamestate.pCards[gamestate.queue[gamestate.queueCtr]]}`
+  );
   // show hit and stand, always
   toggleViews([
     ["hit-btn", 1],
@@ -733,13 +766,10 @@ function getChoice() {
     ["split-btn", 0],
   ]);
   //show double/split conditionally.
-  if (gamestate.playerCards[gamestate.currHand].length === 2) {
+  if (currHand.length === 2) {
     toggleViews([["double-btn", 1]]);
   }
-  if (
-    gamestate.playerCards[gamestate.currHand][0] ===
-    gamestate.playerCards[gamestate.currHand][1]
-  ) {
+  if (currHand[0] === currHand[1]) {
     toggleViews([["split-btn", 1]]);
   }
   // add event listeners to the buttons
@@ -756,7 +786,6 @@ function getChoice() {
     });
   });
 }
-
 async function doPlayerChoice(choice) {
   if (choice === "hit") {
     console.log("in the hit statement...");
@@ -781,48 +810,16 @@ async function doPlayerChoice(choice) {
 }
 function showDealerDown() {
   let dealerDown = document.getElementById("dealer-down");
-  dealerDown.innerHTML = gamestate.dealerCards[1];
+  dealerDown.innerHTML = gamestate.dCards[1];
 }
-// check for player and dealer blackjack on first deal
-async function initCheck() {
-  let pSum = getSum(gamestate.playerCards[gamestate.currHand]);
-  let dSum = getSum(gamestate.dealerCards);
-  if (pSum === 21 && dSum === 21) {
-    logHand(false, false);
-    console.log("***init push***");
-    await delay(1000);
-    showDealerDown();
-    resetGameState();
-    initialize();
-  } else if (pSum != 21 && dSum === 21) {
-    console.log("***init dealer blackjack***");
-    logHand(false, false);
-    await delay(1000);
-    showDealerDown();
-    logHand(0, 0);
-    resetGameState();
-    initialize();
-  } else if (pSum === 21 && dSum != 21) {
-    console.log("player blackjack!");
-    logHand(true, true);
-    await delay(1000);
-    showDealerDown();
-    logHand(1, 1);
-    resetGameState();
-    initialize();
-  } else {
-    return "proceed";
-  }
-}
-
 function evalHand() {
   if (gamestate.currHand != "dealer-cards") {
-    const sum = getSum(gamestate.playerCards[gamestate.currHand]);
+    const sum = getSum(gamestate.pCards[gamestate.currHand]);
     return sum;
   } else {
     let dealerState;
-    const sum = getSum(gamestate.dealerCards);
-    let dealerSoftTotal = gamestate.dealerCards.includes(11) ? true : false;
+    const sum = getSum(gamestate.dCards);
+    let dealerSoftTotal = gamestate.dCards.includes(11) ? true : false;
     if (sum === 21) {
       dealerState = "blackjack";
     } else if (sum > 21) {
@@ -835,96 +832,127 @@ function evalHand() {
     return {dealerState, sum};
   }
 }
-
 async function hit() {
-  if (gamestate.currHand != "dealer-cards") {
-    toggleViews([["choice-view", 0]]);
-    let cardVal = getRandomCard();
-    gamestate.playerCards[gamestate.currHand].push(cardVal);
-    buildAssignCard(cardVal);
-    console.log("hit complete");
-    gamestate.pHandEval[gamestate.currHand] = evalHand();
-    if (
-      gamestate.pHandEval[gamestate.currHand] === 21 ||
-      gamestate.pHandEval[gamestate.currHand] > 21
-    ) {
-      console.log("not a safe sum....");
-      await delay(1000);
-      gamestate.currHand =
-        gamestate.currHand === "split-a" ? "split-b" : "dealer-cards";
-      console.log(`changing turn to ${gamestate.currHand}...`);
-      if (gamestate.currHand === "dealer-cards") {
-        showDealerDown();
-        hit();
-      } else {
-        hit();
-      }
-    } else {
-      console.log("safe sum, show choices...");
-      toggleViews([["choice-view", 1]]);
-    }
-  } else {
-    gamestate.dHandEval = evalHand();
-    console.log(
-      `dealer first eval is...${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
-    );
-    while (gamestate.dHandEval.dealerState === "safeSum") {
-      await delay(1000);
-      let cardVal = getRandomCard();
-      gamestate.dealerCards.push(cardVal);
-      buildAssignCard(cardVal);
+  let currHand = gamestate.queue[gamestate.queueCtr];
+  // hide choice view and push a card onto the current player hand.
+  toggleViews([["choice-view", 0]]);
+  let cardVal = getRandomCard();
+  gamestate.pCards[currHand].push(cardVal);
+  buildAssignCard(cardVal);
+  console.log("hit complete");
+  // get the player sum. if equal to or greater than 21, move to next hand (either next split or dealer)
+  gamestate.pHandEval[gamestate.currHand] = evalHand();
+  if (
+    gamestate.pHandEval[gamestate.currHand] === 21 ||
+    gamestate.pHandEval[gamestate.currHand] > 21
+  ) {
+    console.log("not a safe sum....");
+    await delay(1000);
+    gamestate.queueCtr++;
+    currHand = gamestate.queue[queueCtr];
+    console.log(`changing turn to ${currHand}...`);
+    if (gamestate.currHand === "dealer-cards") {
+      // queue has advanced to dealer-cards. show the down card and begin the dealer loop until complete.
+      // evaluate end state and restart.
+      showDealerDown();
       gamestate.dHandEval = evalHand();
       console.log(
-        `dealer next eval is...${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
+        `dealer first eval is...${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
       );
+      while (gamestate.dHandEval.dealerState === "safeSum") {
+        await delay(1000);
+        let cardVal = getRandomCard();
+        gamestate.dCards.push(cardVal);
+        buildAssignCard(cardVal);
+        gamestate.dHandEval = evalHand();
+        console.log(
+          `dealer next eval is...${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
+        );
+      }
+      console.log("end dealer hit loop...");
+      await determineEndWinner();
+      initialize();
+    } else {
+      // queue has advanced to a split card, initiate that hand with a split.
+      hit();
     }
-    await delay(1000);
-    await determineEndWinner();
-    // await delay(1000);
-    // initialize();
+  } else {
+    // the player has a safe hand and can choose again.
+    console.log("safe sum, show choices...");
+    toggleViews([["choice-view", 1]]);
   }
 }
+// *******Evaluations and Transitions************
+function evalHand() {
+  if (gamestate.queue[queueCtr] != "dealer-cards") {
+    const sum = getSum(gamestate.pCards[gamestate.queue[gamestate.queueCtr]]);
+    return sum;
+  } else {
+    let dealerState;
+    const sum = getSum(gamestate.dCards);
+    let dealerSoftTotal = gamestate.dCards.includes(11) ? true : false;
+    if (sum === 21) {
+      dealerState = "blackjack";
+    } else if (sum > 21) {
+      dealerState = "bust";
+    } else if (sum < 17 || (sum === 17 && dealerSoftTotal)) {
+      dealerState = "safeSum";
+    } else if (sum >= 17) {
+      dealerState = "dealerStand";
+    }
+    return {dealerState, sum};
+  }
+}
+async function determineEndWinner() {
+  console.log("determine end winner...");
 
-function determineEndWinner() {
-  console.log("determining end winner....");
-  console.log(
-    `player hand is: ${gamestate.pHandEval["player-cards"]} and dealer hand is ${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
-  );
-  // dealer wins or push
-  if (
-    (gamestate.dHandEval.sum >= gamestate.pHandEval["player-cards"] &&
-      gamestate.dHandEval.dealerState != "bust") ||
-    gamestate.pHandEval["player-cards"] >= 21
-  ) {
-    console.log("logging dealer wins or push...");
-    logHand(false, false);
+  // push: equal sum and neither has busted.
+  // lose: bust / dealerSum is greater and not bust.
+  // win: greater and not bust / dealer bust.
+
+  // loop through the queue until dealer-cards
+  for (let index = 0; index < gamestate.queue.length - 1; index++) {
+    let currHand = gamestate.queue[gamestate.queueCtr];
+    let pHand = gamestate.pCards[currHand];
+    let pSum = getSum(pHand);
+    let dSum = getSum(gamestate.dCards);
+    if (pSum > 21) {
+      // player bust, lose.
+      // log a loss, no blackjack, and do not increment gamestate cash (player loses money).
+      // correct responses are still captured with updateCashPoints
+      await processEndState(false, false);
+    } else if (pSum <= dSum && gamestate.dHandEval.dealerState != "bust") {
+      // push or loss. logged as a loss, player loses money.
+      await processEndState(false, false);
+    } else if (pSum > dSum) {
+      await processEndState(true, false);
+    }
+  }
+  delay(1000);
+  return;
+}
+async function processEndState(win, blackjack) {
+  if (win && blackjack) {
+    logHand(true, true);
+    gamestate.cash += gamestate.totalBet * 1.5;
     updateCashPoints();
-    // player wins
-  } else if (
-    gamestate.pHandEval["player-cards"] > gamestate.dHandEval.sum &&
-    gamestate.pHandEval["player-cards"] <= 21
-  ) {
-    console.log("logging player win...");
+  } else if (win) {
+    logHand(true, false);
+    gamestate.cash += gamestate.totalBet;
+    updateCashPoints();
+  } else {
     logHand(false, false);
-    gamestate.cash += gamestate.totalBet * 2;
     updateCashPoints();
   }
-
-  return Promise.resolve("captured end updates");
+  await delay(1000);
 }
-
 async function initSplit() {
   toggleViews([["choice-view", 0]]);
-  let [splitA, splitB] = gamestate.playerCards["player-cards"];
-  delete gamestate.playerCards["player-cards"];
-  gamestate.playerCards["split-a"] = [splitA];
-  gamestate.playerCards["split-b"] = [splitB];
-  gamestate.currHand = "split-a";
+  let [splitA, splitB] = gamestate.pCards["first-deal"];
+  gamestate.pCards["first-deal"] = [splitA];
+  gamestate.pCards[`split-${gamestate.queueCtr}`] = [splitB];
   // will need to replace this with an animation but delete and recreate for now
-  const playerCardDiv = document.getElementById("player-cards");
-  while (playerCardDiv.firstChild) {
-    playerCardDiv.removeChild(playerCardDiv.firstChild);
-  }
+  const playerCardDiv = document.getElementById("first-deal");
   playerCardDiv.innerHTML = `
   <div class="container">
     <div class="row" id = "split-container">
@@ -942,3 +970,9 @@ async function initSplit() {
   await delay(500);
   getChoice();
 }
+
+// ******** Execute main game loop logic ************
+document.addEventListener("DOMContentLoaded", function () {
+  console.log("dom loaded...");
+  initialize();
+});
