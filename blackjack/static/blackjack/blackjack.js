@@ -996,6 +996,8 @@ async function initSplit() {
   // add the new split card to player cards
   let playerCardDiv = document.getElementById("player-cards");
   let splitDiv = document.createElement("div");
+  splitDiv.classList.add("col", "p-3");
+  splitDiv.id = splitString;
   splitDiv.innerHTML = `<h2>${splitCard}</h2>`;
   splitDiv.classList.add("col", "p-3");
   playerCardDiv.appendChild(splitDiv);
