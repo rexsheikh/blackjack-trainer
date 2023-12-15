@@ -13,6 +13,10 @@
 
    - show total bet
    - cards
+     - use https://en.wikipedia.org/wiki/Playing_Cards_(Unicode_block)
+   - animations
+   - site navigation
+   - plotly
 
 3. plotly and site nav.
 

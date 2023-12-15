@@ -455,10 +455,39 @@ const gamestate = {
   cash: 0,
   points: 0,
   totalBet: 0,
-  debugMode: true,
+  debugMode: false,
 };
 const cards = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
+const cardIcons = {
+  2: ["&#x1F0A2", "&#x1F0B2", "&#x1F0C2", "&#x1F0D2"],
+  3: ["&#x1F0A3", "&#x1F0B3", "&#x1F0C3", "&#x1F0D3"],
+  4: ["&#x1F0A4", "&#x1F0B4", "&#x1F0C4", "&#x1F0D4"],
+  5: ["&#x1F0A5", "&#x1F0B5", "&#x1F0C5", "&#x1F0D5"],
+  6: ["&#x1F0A6", "&#x1F0B6", "&#x1F0C6", "&#x1F0D6"],
+  7: ["&#x1F0A7", "&#x1F0B7", "&#x1F0C7", "&#x1F0D7"],
+  8: ["&#x1F0A8", "&#x1F0B8", "&#x1F0C8", "&#x1F0D8"],
+  9: ["&#x1F0A9", "&#x1F0B9", "&#x1F0C9", "&#x1F0D9"],
+  10: [
+    "&#x1F0AA",
+    "&#x1F0BA",
+    "&#x1F0CA",
+    "&#x1F0DA",
+    "&#x1F0AB",
+    "&#x1F0BB",
+    "&#x1F0CB",
+    "&#x1F0DB",
+    "&#x1F0AD",
+    "&#x1F0BD",
+    "&#x1F0CD",
+    "&#x1F0DD",
+    "&#x1F0AE",
+    "&#x1F0BE",
+    "&#x1F0CE",
+    "&#x1F0DE",
+  ],
+  11: [`&#x1F0A1`, `&#x1F0B1`, `&#x1F0C1`, `&#x1F0D1`],
+};
 // ****** API Requests **********
 function getRankCash() {
   fetch(`blackjack/playerInfo`)
@@ -525,18 +554,23 @@ function logHand(win, blackjack) {
 }
 // ********* HELPER FUNCTIONS ********
 function buildAssignCard(
-  cardVal,
+  cardIcon,
   placement = gamestate.queue[gamestate.queueCtr]
 ) {
   console.log(`placement...${placement}`);
   let cardEl = document.createElement("h2");
-  cardEl.innerHTML = cardVal;
+  cardEl.style.fontSize = "8em";
+  cardEl.innerHTML = cardIcon;
   document.getElementById(placement).appendChild(cardEl);
 }
 function getRandomCard() {
+  // get a random value then a random suit (icon)
   let idx = Math.floor(Math.random() * cards.length);
-  let cardVal = cards[idx];
-  return cardVal;
+  let val = cards[idx];
+  let iconLst = cardIcons[val];
+  let iconIdx = Math.floor(Math.random() * iconLst.length);
+  let icon = iconLst[iconIdx];
+  return {val, icon};
 }
 function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -680,18 +714,19 @@ function toggleViews(actionList) {
 function firstDeal() {
   console.log("firstDeal...");
   for (let i = 0; i < 4; i++) {
-    let cardVal = getRandomCard();
+    let card = getRandomCard();
     if (i % 2 == 0) {
-      gamestate.pCards["first-deal"].push(cardVal);
-      buildAssignCard(cardVal, "first-deal");
+      gamestate.pCards["first-deal"].push(card.val);
+      buildAssignCard(card.icon, "first-deal");
     } else {
-      gamestate.dCards.push(cardVal);
+      gamestate.dCards.push(card.val);
       if (i === 1) {
-        buildAssignCard(cardVal, "dealer-cards");
+        buildAssignCard(card.icon, "dealer-cards");
       } else {
         let cardEl = document.createElement("h2");
         cardEl.id = "dealer-down";
-        cardEl.innerHTML = "dealerDown";
+        cardEl.innerHTML = card.icon;
+        cardEl.style.display = "none";
         document.getElementById("dealer-cards").appendChild(cardEl);
       }
     }
@@ -841,7 +876,8 @@ async function doPlayerChoice(choice) {
 }
 function showDealerDown() {
   let dealerDown = document.getElementById("dealer-down");
-  dealerDown.innerHTML = gamestate.dCards[1];
+  dealerDown.style.display = "block";
+  dealerDown.style.fontSize = "8em";
 }
 function evalHand() {
   if (gamestate.currHand != "dealer-cards") {
@@ -867,9 +903,9 @@ async function hit() {
   let currHand = gamestate.queue[gamestate.queueCtr];
   // hide choice view and push a card onto the current player hand.
   toggleViews([["choice-view", 0]]);
-  let cardVal = getRandomCard();
-  gamestate.pCards[currHand].push(cardVal);
-  buildAssignCard(cardVal);
+  let card = getRandomCard();
+  gamestate.pCards[currHand].push(card.val);
+  buildAssignCard(card.icon);
   console.log("hit complete");
   // get the player sum. if equal to or greater than 21, move to next hand (either next split or dealer)
   gamestate.pHandEval[gamestate.currHand] = evalHand();
@@ -908,9 +944,10 @@ async function dealerHitLoop() {
   );
   while (gamestate.dHandEval.dealerState === "safeSum") {
     await delay(1000);
-    let cardVal = getRandomCard();
-    gamestate.dCards.push(cardVal);
-    buildAssignCard(cardVal);
+    let card = getRandomCard();
+    console.log(`dealer random card: ${JSON.stringify(card)}`);
+    gamestate.dCards.push(card.val);
+    buildAssignCard(card.icon);
     gamestate.dHandEval = evalHand();
     console.log(
       `dealer next eval is...${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
