@@ -528,6 +528,7 @@ function buildAssignCard(
   cardVal,
   placement = gamestate.queue[gamestate.queueCtr]
 ) {
+  console.log(`placement...${placement}`);
   let cardEl = document.createElement("h2");
   cardEl.innerHTML = cardVal;
   document.getElementById(placement).appendChild(cardEl);
@@ -651,7 +652,7 @@ function resetGameState() {
   gamestate.points = 0;
   gamestate.pHandEval = {};
   gamestate.dHandEval = {};
-  const playerCardDiv = document.getElementById("first-deal");
+  const playerCardDiv = document.getElementById("player-cards");
   const dealerCardDiv = document.getElementById("dealer-cards");
   while (playerCardDiv.firstChild) {
     playerCardDiv.removeChild(playerCardDiv.firstChild);
@@ -659,6 +660,10 @@ function resetGameState() {
   while (dealerCardDiv.firstChild) {
     dealerCardDiv.removeChild(dealerCardDiv.firstChild);
   }
+  let firstDealDiv = document.createElement("div");
+  firstDealDiv.classList.add("col", "p-3");
+  firstDealDiv.id = "first-deal";
+  playerCardDiv.appendChild(firstDealDiv);
 }
 
 function toggleViews(actionList) {
@@ -812,6 +817,7 @@ async function doPlayerChoice(choice) {
     if (gamestate.queue[gamestate.queueCtr] === "dealer-cards") {
       dealerHitLoop();
     } else {
+      await delay(1000);
       hit();
     }
     // end player turn, dealer turn
