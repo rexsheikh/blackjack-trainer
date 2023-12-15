@@ -769,7 +769,8 @@ function getChoice() {
   if (currHand.length === 2) {
     toggleViews([["double-btn", 1]]);
   }
-  if (currHand[0] === currHand[1]) {
+  // can only split twice in most games
+  if (currHand[0] === currHand[1] && gamestate.queue.length < 3) {
     toggleViews([["split-btn", 1]]);
   }
   // add event listeners to the buttons
@@ -948,24 +949,24 @@ async function processEndState(win, blackjack) {
 }
 async function initSplit() {
   toggleViews([["choice-view", 0]]);
-  let [splitA, splitB] = gamestate.pCards["first-deal"];
-  gamestate.pCards["first-deal"] = [splitA];
-  gamestate.pCards[`split-${gamestate.queueCtr}`] = [splitB];
-  // will need to replace this with an animation but delete and recreate for now
-  const playerCardDiv = document.getElementById("first-deal");
-  playerCardDiv.innerHTML = `
-  <div class="container">
-    <div class="row" id = "split-container">
-      <div class="col-md-6" id = "split-a">
-          <h2>splitA </h2>
-          <h2>${splitA}</h2>
-      </div>
-      <div class="col-md-6" id = "split-b">
-        <h2>splitB</h2>
-        <h2>${splitB}</h2>
+  // get the current hand, take away the last card to create a new hand. create a split-string to create necessary keys and elements
+  let splitString = `split-${gamestate.queueCtr}`;
+  // add it to the queue with a splice operation to the second to last position (in front of dealer-cards)
+  let currHand = gamestate.pCards[gamestate.queue[queueCtr]];
+  let splitCard = currHand.pop();
+  gamestate.pCards[splitString] = [splitCard];
+  gamestate.queue.splice(gamestate.queue.length - 2, splitString);
+  let playerCardDiv = document.getElementById("first-deal");
+  let splitDiv = document.createElement("div");
+  splitDiv.classList.add("container");
+  splitDiv.innerHTML = `
+    <div class="row" >
+      <div class="col-md-4" id = "${splitString}">
+          <h2>${splitCard}</h2>
       </div>
     </div>
-  </div>`;
+ `;
+  playerCardDiv.appendChild(splitDiv);
   hit();
   await delay(500);
   getChoice();
