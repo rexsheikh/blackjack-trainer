@@ -616,7 +616,7 @@ async function initialize() {
   getRankCash();
   resetGameState();
   if (gamestate.debugMode) {
-    manualDealAssign(2, 9, 4, 5);
+    manualDealAssign(2, 2, 4, 5);
   } else {
     firstDeal();
   }
@@ -983,24 +983,26 @@ async function initSplit() {
   // get the current hand, take away the last card to create a new hand. create a split-string to create necessary keys and elements
   let splitString = `split-${gamestate.queueCtr}`;
   // add it to the queue with a splice operation to the second to last position (in front of dealer-cards)
-  let currHand = gamestate.pCards[gamestate.queue[queueCtr]];
-  let splitCard = currHand.pop();
+  let splitCard = gamestate.pCards[gamestate.queue[gamestate.queueCtr]].pop();
   gamestate.pCards[splitString] = [splitCard];
-  gamestate.queue.splice(gamestate.queue.length - 2, splitString);
-  let playerCardDiv = document.getElementById("first-deal");
+  gamestate.queue.splice(gamestate.queue.length - 1, 0, splitString);
+  console.log(`gamestate after split ops: ${JSON.stringify(gamestate)}`);
+
+  // rebuild the current hand
+  let currHand = gamestate.queue[gamestate.queueCtr];
+  let currHandDiv = document.getElementById(currHand);
+  currHandDiv.removeChild(currHandDiv.lastChild);
+
+  // add the new split card to player cards
+  let playerCardDiv = document.getElementById("player-cards");
   let splitDiv = document.createElement("div");
-  splitDiv.classList.add("container");
-  splitDiv.innerHTML = `
-    <div class="row" >
-      <div class="col-md-4" id = "${splitString}">
-          <h2>${splitCard}</h2>
-      </div>
-    </div>
- `;
+  splitDiv.innerHTML = `<h2>${splitCard}</h2>`;
+  splitDiv.classList.add("col", "p-3");
   playerCardDiv.appendChild(splitDiv);
-  hit();
+
+  // hit to the current hand.
   await delay(500);
-  getChoice();
+  hit();
 }
 
 // ******** Execute main game loop logic ************
