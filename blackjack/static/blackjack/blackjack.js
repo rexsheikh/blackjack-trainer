@@ -819,10 +819,16 @@ async function doPlayerChoice(choice) {
     let newBet = gamestate.totalBet * 2;
     gamestate.totalBet = newBet;
     hit();
-    await delay(1000);
-    showDealerDown();
-    gamestate.currHand = "dealer-cards";
-    hit();
+    gamestate.queueCtr++;
+    if (gamestate.queue[gamestate.queueCtr] === "dealer-cards") {
+      console.log(
+        `adv queue. current hand is ${gamestate.queue[gamestate.queueCtr]}`
+      );
+      await delay(1000);
+      dealerHitLoop();
+    } else {
+      hit();
+    }
   } else if (choice === "split") {
     initSplit();
   }
@@ -886,6 +892,9 @@ async function hit() {
 }
 // *******Evaluations and Transitions************
 async function dealerHitLoop() {
+  console.log(
+    `start dealer hit loop. dealer hand is ${JSON.stringify(gamestate.dCards)}`
+  );
   showDealerDown();
   gamestate.dHandEval = evalHand();
   console.log(
