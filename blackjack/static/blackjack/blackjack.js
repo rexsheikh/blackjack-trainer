@@ -524,7 +524,10 @@ function logHand(win, blackjack) {
     });
 }
 // ********* HELPER FUNCTIONS ********
-function buildAssignCard(cardVal, placement = gamestate.queue[queueCtr]) {
+function buildAssignCard(
+  cardVal,
+  placement = gamestate.queue[gamestate.queueCtr]
+) {
   let cardEl = document.createElement("h2");
   cardEl.innerHTML = cardVal;
   document.getElementById(placement).appendChild(cardEl);
@@ -539,7 +542,8 @@ function delay(time) {
 }
 function determineCorrect(choice) {
   // get the current hand string, then get the list of cards in the player hand object.
-  let currHand = gamestate.queue[queueCtr];
+  console.log("determine correct...");
+  let currHand = gamestate.queue[gamestate.queueCtr];
   let pCards = gamestate.pCards[currHand];
   let correctChoice;
   let pA = pCards[0];
@@ -555,7 +559,7 @@ function determineCorrect(choice) {
       gamestate.points += 1;
     }
     // soft totals (with sum < 21)
-  } else if (sTotal && getSum(currHand) < 21) {
+  } else if (sTotal && getSum(pCards) < 21) {
     let sum = 0;
     for (let idx = 0; idx < pCards.length; idx++) {
       if (pCards[idx] === 11) {
@@ -589,7 +593,7 @@ function determineCorrect(choice) {
       }
       correctChoice = stratSoftTotal[sum][dU];
     } else {
-      sum = getSum(currHand);
+      sum = getSum(pCards);
       correctChoice = stratHardTotal[sum][dU];
     }
     console.log(`choice was ${choice}. correct: ${correctChoice}`);
@@ -608,18 +612,23 @@ function getSum(cards) {
 // intialize functions
 // bet, deal, eval
 async function initialize() {
+  console.log("initialize...");
   getRankCash();
   resetGameState();
-  bet();
   if (gamestate.debugMode) {
     manualDealAssign(2, 9, 4, 5);
   } else {
     firstDeal();
   }
+  bet();
+
   const checkDeal = await initCheck();
   if (checkDeal != "proceed") {
     console.log("init check not proceed...");
   } else {
+    console.log(
+      `gamestate in init before getChoice: ${JSON.stringify(gamestate)}`
+    );
     getChoice();
   }
 }
@@ -634,7 +643,8 @@ function resetGameState() {
   gamestate.pCards = {
     "first-deal": [],
   };
-  gamestate.queue = "first-deal";
+  gamestate.queue = ["first-deal", "dealer-cards"];
+  gamestate.queueCtr = 0;
   gamestate.dCards = [];
   gamestate.totalBet = 0;
   gamestate.cash = 0;
@@ -753,7 +763,6 @@ function bet() {
     });
 }
 function getChoice() {
-  console.log("getPlayerChoice....");
   let currHand = gamestate.pCards[gamestate.queue[gamestate.queueCtr]];
   console.log(
     `current hand: ${gamestate.pCards[gamestate.queue[gamestate.queueCtr]]}`
@@ -788,14 +797,23 @@ function getChoice() {
   });
 }
 async function doPlayerChoice(choice) {
+  console.log(`choice is ${choice}`);
   if (choice === "hit") {
     console.log("in the hit statement...");
     hit();
   } else if (choice === "stand") {
-    gamestate.currHand =
-      gamestate.currHand === "split-a" ? "split-b" : "dealer-cards";
-    showDealerDown();
-    hit();
+    // advance the counter and check the next hand. If dealer, end with dealer hit loop.
+    // else, advanced to split which will need a hit to start.
+    gamestate.queueCtr++;
+    await delay(1000);
+    console.log(
+      `current hand after stand: ${gamestate.queue[gamestate.queueCtr]}`
+    );
+    if (gamestate.queue[gamestate.queueCtr] === "dealer-cards") {
+      dealerHitLoop();
+    } else {
+      hit();
+    }
     // end player turn, dealer turn
   } else if (choice === "double") {
     let newBet = gamestate.totalBet * 2;
@@ -850,29 +868,12 @@ async function hit() {
     console.log("not a safe sum....");
     await delay(1000);
     gamestate.queueCtr++;
-    currHand = gamestate.queue[queueCtr];
+    currHand = gamestate.queue[gamestate.queueCtr];
     console.log(`changing turn to ${currHand}...`);
-    if (gamestate.currHand === "dealer-cards") {
+    if (currHand === "dealer-cards") {
       // queue has advanced to dealer-cards. show the down card and begin the dealer loop until complete.
       // evaluate end state and restart.
-      showDealerDown();
-      gamestate.dHandEval = evalHand();
-      console.log(
-        `dealer first eval is...${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
-      );
-      while (gamestate.dHandEval.dealerState === "safeSum") {
-        await delay(1000);
-        let cardVal = getRandomCard();
-        gamestate.dCards.push(cardVal);
-        buildAssignCard(cardVal);
-        gamestate.dHandEval = evalHand();
-        console.log(
-          `dealer next eval is...${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
-        );
-      }
-      console.log("end dealer hit loop...");
-      await determineEndWinner();
-      initialize();
+      dealerHitLoop();
     } else {
       // queue has advanced to a split card, initiate that hand with a split.
       hit();
@@ -884,8 +885,28 @@ async function hit() {
   }
 }
 // *******Evaluations and Transitions************
+async function dealerHitLoop() {
+  showDealerDown();
+  gamestate.dHandEval = evalHand();
+  console.log(
+    `dealer first eval is...${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
+  );
+  while (gamestate.dHandEval.dealerState === "safeSum") {
+    await delay(1000);
+    let cardVal = getRandomCard();
+    gamestate.dCards.push(cardVal);
+    buildAssignCard(cardVal);
+    gamestate.dHandEval = evalHand();
+    console.log(
+      `dealer next eval is...${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
+    );
+  }
+  console.log("end dealer hit loop...");
+  await determineEndWinner();
+  initialize();
+}
 function evalHand() {
-  if (gamestate.queue[queueCtr] != "dealer-cards") {
+  if (gamestate.queue[gamestate.queueCtr] != "dealer-cards") {
     const sum = getSum(gamestate.pCards[gamestate.queue[gamestate.queueCtr]]);
     return sum;
   } else {
@@ -912,9 +933,10 @@ async function determineEndWinner() {
   // win: greater and not bust / dealer bust.
 
   // loop through the queue until dealer-cards
-  for (let index = 0; index < gamestate.queue.length - 1; index++) {
-    let currHand = gamestate.queue[gamestate.queueCtr];
+  for (let i = 0; i < gamestate.queue.length - 1; i++) {
+    let currHand = gamestate.queue[i];
     let pHand = gamestate.pCards[currHand];
+    console.log(`determine winner pHand: ${pHand}`);
     let pSum = getSum(pHand);
     let dSum = getSum(gamestate.dCards);
     if (pSum > 21) {
