@@ -557,7 +557,6 @@ function buildAssignCard(
   cardIcon,
   placement = gamestate.queue[gamestate.queueCtr]
 ) {
-  console.log(`placement...${placement}`);
   let cardEl = document.createElement("h2");
   cardEl.style.fontSize = "8em";
   cardEl.innerHTML = cardIcon;
@@ -695,7 +694,7 @@ function resetGameState() {
     dealerCardDiv.removeChild(dealerCardDiv.firstChild);
   }
   let firstDealDiv = document.createElement("div");
-  firstDealDiv.classList.add("col", "p-3");
+  firstDealDiv.classList.add("col", "p-3", "hand");
   firstDealDiv.id = "first-deal";
   playerCardDiv.appendChild(firstDealDiv);
 }
