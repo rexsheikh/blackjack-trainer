@@ -557,9 +557,17 @@ function buildAssignCard(
   cardIcon,
   placement = gamestate.queue[gamestate.queueCtr]
 ) {
-  let cardEl = document.createElement("h2");
-  cardEl.style.fontSize = "8em";
-  cardEl.innerHTML = cardIcon;
+  let cardEl = document.createElement("div");
+  cardEl.classList.add("flip-card");
+  cardEl.innerHTML = ` <div class="flip-card-inner">
+    <div class="flip-card-front">
+      <h1>${cardIcon}</h1>
+    </div>
+    <div class="flip-card-back">
+      <h1>&#x1F0A0</h1>
+    </div>
+  </div>
+`;
   document.getElementById(placement).appendChild(cardEl);
 }
 function getRandomCard() {
@@ -722,11 +730,21 @@ function firstDeal() {
       if (i === 1) {
         buildAssignCard(card.icon, "dealer-cards");
       } else {
-        let cardEl = document.createElement("h2");
-        cardEl.id = "dealer-down";
-        cardEl.innerHTML = card.icon;
-        cardEl.style.display = "none";
-        document.getElementById("dealer-cards").appendChild(cardEl);
+        // for dealer down, do not add the flip-card class initially.
+        // showDealerDown function adds this class to execute the animation
+        let dealerDown = document.createElement("div");
+        dealerDown.classList.add("flip-card");
+        dealerDown.innerHTML = ` <div class="flip-card-inner-dealer-down" id = "dealer-down">
+          <div class="flip-card-front" id = "front-dealer-down">
+            <h1>&#x1F0A0</h1>
+          </div>
+          <div class="flip-card-back" id = "back-dealer-down">
+            <h1>${card.icon}</h1>
+          </div>
+        </div>
+      `;
+        let dealerHand = document.getElementById("dealer-cards");
+        dealerHand.appendChild(dealerDown);
       }
     }
   }
@@ -875,8 +893,12 @@ async function doPlayerChoice(choice) {
 }
 function showDealerDown() {
   let dealerDown = document.getElementById("dealer-down");
-  dealerDown.style.display = "block";
-  dealerDown.style.fontSize = "8em";
+  let oldFront = document.getElementById("front-dealer-down");
+  let oldBack = document.getElementById("back-dealer-down");
+  oldFront.innerHTML = oldBack.innerHTML;
+  oldBack.innerHTML = `<h1>&#x1F0A0</h1>`;
+  dealerDown.classList.remove("flip-card-inner-dealer-down");
+  dealerDown.classList.add("flip-card-inner");
 }
 function evalHand() {
   if (gamestate.currHand != "dealer-cards") {
