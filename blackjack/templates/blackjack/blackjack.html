@@ -14,72 +14,74 @@
 
 <body>
     <script src="{% static 'blackjack/blackjack.js' %}"></script>
-    <div class="container-xl">
-
-    </div>
-    <div class = "container text-center" id = "player-info-view">
-        <div class="row align-items-end">
-            <div class="col p-6">
-                <h2 id = "player-rank"></h2>
-            </div>
-            <div class="col p-6">
-                <h2 id = "player-cash"></h2>
-            </div>
-        </div>
-
-    </div>
-    <div class="container text-center" id="bet-view">
-        <div class="row align-items-end">
-            <div class="col p-3">
-                <button class="btn btn-outline-success bet-btn" data-chip-val="5">5</button>
-            </div>
-            <div class="col p-3">
-                <button class="btn btn-outline-success bet-btn" data-chip-val="10">10</button>
-            </div>
-            <div class="col p-3">
-                <button class="btn btn-outline-success bet-btn" data-chip-val="15">15</button>
+    <div class = "background-container">
+        <div class = "container text-center player-info" id = "player-info-view">
+            <div class="row align-items-end">
+                <div class="col p-4" >
+                    <h2 id = "player-rank"></h2>
+                </div>
+                <div class="col p-4">
+                    <h2 id = "player-cash"></h2>
+                </div>
+                <div class="col p-4">
+                    <h2 id = "total-bet"></h2>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="container text-center" id = "deal-btn-view">
-        <div class="row align-items-center">
-            <div class="col p-5">
-            </div>
-            <div class="col p-2">
-                <button class="btn btn-info deal-btn">Deal</button>
-            </div>
-            <div class="col p-5">
-            </div>
-        </div>
-    </div>
-    <div class="container text-center" id="deal-view">
-        <div class="row align-items-start">
-            <div class="col p-3 hand" id = "dealer-cards">
-            </div>
-        </div>
-        <div class="row align-items-start" id = "player-cards">
-            <div class="col p-3 hand" id="first-deal">
-            </div>
-        </div>
-    </div>
-    <div class="row-align-items-start" id="choice-view">
-        <div class="container text-center">
+        <div class="container text-center" id="bet-view">
             <div class="row align-items-end">
                 <div class="col p-3">
-                    <button class="btn btn-outline-success choice-btn" id = "hit-btn" data-choice="hit">hit</button>
+                    <button class="btn btn-outline-success bet-btn" data-chip-val="5">5</button>
                 </div>
                 <div class="col p-3">
-                    <button class="btn btn-outline-success choice-btn" id = "stand-btn" data-choice="stand">stand</button>
+                    <button class="btn btn-outline-success bet-btn" data-chip-val="10">10</button>
                 </div>
                 <div class="col p-3">
-                    <button class="btn btn-outline-success choice-btn" id = "double-btn" data-choice="double">double</button>
+                    <button class="btn btn-outline-success bet-btn" data-chip-val="15">15</button>
                 </div>
-                <div class="col p-3">
-                    <button class="btn btn-outline-success choice-btn" id = "split-btn" data-choice="split">split</button>
+            </div>
+        </div>
+        <div class="container text-center" id = "deal-btn-view">
+            <div class="row align-items-center">
+                <div class="col p-5">
+                </div>
+                <div class="col p-2">
+                    <button class="btn btn-info deal-btn">Deal</button>
+                </div>
+                <div class="col p-5">
+                </div>
+            </div>
+        </div>
+        <div class="container text-center" id="deal-view">
+            <div class="row align-items-start">
+                <div class="col p-3 hand" id = "dealer-cards">
+                </div>
+            </div>
+            <div class="row align-items-start" id = "player-cards">
+                <div class="col p-3 hand" id="first-deal">
+                </div>
+            </div>
+        </div>
+        <div class="row-align-items-start" id="choice-view">
+            <div class="container text-center">
+                <div class="row align-items-end">
+                    <div class="col p-3">
+                        <button class="btn btn-outline-success choice-btn" id = "hit-btn" data-choice="hit">hit</button>
+                    </div>
+                    <div class="col p-3">
+                        <button class="btn btn-outline-success choice-btn" id = "stand-btn" data-choice="stand">stand</button>
+                    </div>
+                    <div class="col p-3">
+                        <button class="btn btn-outline-success choice-btn" id = "double-btn" data-choice="double">double</button>
+                    </div>
+                    <div class="col p-3">
+                        <button class="btn btn-outline-success choice-btn" id = "split-btn" data-choice="split">split</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+      
 </body>
 
 </html>

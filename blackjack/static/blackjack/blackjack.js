@@ -508,8 +508,15 @@ function getRankCash() {
       }
       gamestate.cash = data.cash;
       gamestate.points = data.points;
-      document.getElementById("player-rank").innerText = rank;
-      document.getElementById("player-cash").innerText = data.cash;
+      let rankEl = document.getElementById("player-rank");
+      rankEl.innerText = `Rank: ${rank}`;
+
+      let cashEl = document.getElementById("player-cash");
+
+      cashEl.innerText = `Total Cash: $${data.cash}`;
+
+      let totalBetEl = document.getElementById("total-bet");
+      totalBetEl.innerText = `Total Bet: $${gamestate.totalBet}`;
     });
 }
 function updateCashPoints() {
@@ -588,10 +595,10 @@ function determineCorrect(choice) {
   let currHand = gamestate.queue[gamestate.queueCtr];
   let pCards = gamestate.pCards[currHand];
   let correctChoice;
-  let pA = pCards[0];
-  let pB = pCards[1];
-  let dU = gamestate.dCards[0];
-  let sTotal = pCards.includes(11) ? true : false;
+  let pA = pCards[0].val;
+  let pB = pCards[1].val;
+  let dU = gamestate.dCards[0].val;
+  let sTotal = pA === 11 || pB === 11 ? true : false;
   // pairs
   if (pA === pB && pCards.length === 2) {
     correctChoice = stratPairs[pA][dU];
@@ -604,10 +611,10 @@ function determineCorrect(choice) {
   } else if (sTotal && getSum(pCards) < 21) {
     let sum = 0;
     for (let idx = 0; idx < pCards.length; idx++) {
-      if (pCards[idx] === 11) {
+      if (pCards[idx].val === 11) {
         continue;
       } else {
-        sum += pCards[idx];
+        sum += pCards[idx].val;
       }
     }
     correctChoice = stratSoftTotal[sum][dU];
@@ -644,10 +651,10 @@ function determineCorrect(choice) {
   }
 }
 function getSum(cards) {
-  let sum = cards.reduce(
-    (accumulator, currentValue) => accumulator + currentValue,
-    0
-  );
+  let sum = 0;
+  for (let i = 0; i < cards.length; i++) {
+    sum += cards[i].val;
+  }
   return sum;
 }
 // ********* INITIALIZE / RESET FUNCTIONS ********
@@ -723,26 +730,18 @@ function firstDeal() {
   for (let i = 0; i < 4; i++) {
     let card = getRandomCard();
     if (i % 2 == 0) {
-      gamestate.pCards["first-deal"].push(card.val);
+      gamestate.pCards["first-deal"].push({val: card.val, icon: card.icon});
       buildAssignCard(card.icon, "first-deal");
     } else {
-      gamestate.dCards.push(card.val);
+      gamestate.dCards.push({val: card.val, icon: card.icon});
       if (i === 1) {
         buildAssignCard(card.icon, "dealer-cards");
       } else {
         // for dealer down, do not add the flip-card class initially.
         // showDealerDown function adds this class to execute the animation
         let dealerDown = document.createElement("div");
-        dealerDown.classList.add("flip-card");
-        dealerDown.innerHTML = ` <div class="flip-card-inner-dealer-down" id = "dealer-down">
-          <div class="flip-card-front" id = "front-dealer-down">
-            <h1>&#x1F0A0</h1>
-          </div>
-          <div class="flip-card-back" id = "back-dealer-down">
-            <h1>${card.icon}</h1>
-          </div>
-        </div>
-      `;
+        dealerDown.id = "dealer-down";
+        dealerDown.innerHTML = `<h1 class = "dealer-down">&#x1F0A0</h1>`;
         let dealerHand = document.getElementById("dealer-cards");
         dealerHand.appendChild(dealerDown);
       }
@@ -803,6 +802,8 @@ function bet() {
     btn.addEventListener("click", function () {
       betHand += parseInt(btn.getAttribute("data-chip-val"), 10);
       gamestate.totalBet = betHand;
+      let updateBet = document.getElementById("total-bet");
+      updateBet.innerText = `Total Bet: $${gamestate.totalBet}`;
       toggleViews([["deal-btn-view", 1]]);
     });
   });
@@ -815,7 +816,10 @@ function bet() {
         ["choice-view", 1],
       ]);
       gamestate.cash -= gamestate.totalBet;
-      document.getElementById("player-cash").innerText = gamestate.cash;
+      document.getElementById(
+        "player-cash"
+      ).innerText = `Total Cash: $${gamestate.cash}`;
+      console.log(`total bet is....${gamestate.totalBet}`);
       toggleViews([["deal-btn-view", 0]]);
     });
 }
@@ -892,13 +896,20 @@ async function doPlayerChoice(choice) {
   }
 }
 function showDealerDown() {
-  let dealerDown = document.getElementById("dealer-down");
-  let oldFront = document.getElementById("front-dealer-down");
-  let oldBack = document.getElementById("back-dealer-down");
-  oldFront.innerHTML = oldBack.innerHTML;
-  oldBack.innerHTML = `<h1>&#x1F0A0</h1>`;
-  dealerDown.classList.remove("flip-card-inner-dealer-down");
-  dealerDown.classList.add("flip-card-inner");
+  let dealerCards = document.getElementById("dealer-cards");
+  dealerCards.removeChild(dealerCards.lastChild);
+  let cardEl = document.createElement("div");
+  cardEl.classList.add("flip-card");
+  cardEl.innerHTML = ` <div class="flip-card-inner">
+    <div class="flip-card-front">
+      <h1>${gamestate.dCards[1].icon}</h1>
+    </div>
+    <div class="flip-card-back">
+      <h1>&#x1F0A0</h1>
+    </div>
+  </div>
+`;
+  dealerCards.appendChild(cardEl);
 }
 function evalHand() {
   if (gamestate.currHand != "dealer-cards") {
@@ -967,7 +978,7 @@ async function dealerHitLoop() {
     await delay(1000);
     let card = getRandomCard();
     console.log(`dealer random card: ${JSON.stringify(card)}`);
-    gamestate.dCards.push(card.val);
+    gamestate.dCards.push({val: card.val, icon: card.icon});
     buildAssignCard(card.icon);
     gamestate.dHandEval = evalHand();
     console.log(
@@ -1076,3 +1087,5 @@ document.addEventListener("DOMContentLoaded", function () {
   console.log("dom loaded...");
   initialize();
 });
+
+// ***stats functions***
