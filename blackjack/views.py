@@ -154,7 +154,6 @@ def updateCashPoints(request):
 @login_required
 @csrf_exempt
 def getHeatmaps(request):
-
     if request.method == "GET":
         user = User.objects.get(id=request.user.id)
         user_hands = Hand.objects.filter(user=user)
@@ -164,7 +163,6 @@ def getHeatmaps(request):
 
         raw_ht = [ht.serialize() for ht in HardTotal.objects.filter(user=user)]
         raw_st = [st.serialize() for st in SoftTotal.objects.filter(user=user)]
-        print(f"raw st in getHeatMaps: {raw_st}")
         raw_pair = [pair.serialize()
                     for pair in Pair.objects.filter(user=user)]
         ht_data = ht_heatmap(raw_ht)
@@ -182,12 +180,16 @@ def getHeatmaps(request):
 
 
 def ht_heatmap(data):
+    # create a 16x10 2d array of 0s to reflect the strategy chart of hard totals that span from 5 to 20 (size 16)
+    # and the dealer axis from 2 to Ace (size 10)
     rows, cols = (16, 10)
     # I referenced https://stackoverflow.com/questions/6532881/how-to-make-a-copy-of-a-2d-array-in-python
     # to fix previous 2d array that was improperly copying every change to every row/col
     # using range(rows) allows for unique indices and avoids copying from row to row
     # previously I had correct_ctr = [[0]*cols]*rows
     correct_ctr = [[0]*cols for _ in range(rows)]
+    # loop through the data and increment the proper array index. in hard total, since it starts at 5, re-index with (-5)
+    # re-index the dealer's axis with (-2)
     for i in range(len(data)):
         row = data[i]["hard_total"] - 5
         col = data[i]["dealer_up"] - 2
@@ -197,8 +199,10 @@ def ht_heatmap(data):
 
 
 def st_heatmap(data):
+    # create an 8 x 10 array of 0s to reflect the soft total chart.
     rows, cols = (8, 10)
     correct_ctr = [[0]*cols for _ in range(rows)]
+    # reindex the player and dealer axes with (-2)
     for i in range(len(data)):
         row = data[i]["not_ace"] - 2
         col = data[i]["dealer_up"] - 2
@@ -209,8 +213,10 @@ def st_heatmap(data):
 
 
 def pair_heatmap(data):
+    # create a 10 x 10 array of 0s to reflect the pair chart.
     rows, cols = (10, 10)
     correct_ctr = [[0]*cols for _ in range(rows)]
+    # reindex the player pair with (-5) and dealer with (-2)
     for i in range(len(data)):
         row = data[i]["pair"] - 5
         col = data[i]["dealer_up"] - 2

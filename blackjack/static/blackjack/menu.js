@@ -24,12 +24,7 @@ function getRankCash() {
       } else if (data.points >= 40 && data.points < 50) {
         rank = 5;
       }
-
-      let rankEl = document.getElementById("player-rank");
-      rankEl.innerText = `Rank: ${rank}`;
-
       let cashEl = document.getElementById("player-cash");
-
       cashEl.innerText = `Total Cash: $${data.cash}`;
     });
 }
@@ -48,6 +43,15 @@ function getHeatMaps() {
     .then((response) => response.json())
     .then((data) => {
       console.log(data);
+      // add the wins, blackjacks and total hand elements
+      let totalWins = document.getElementById("total-hands");
+      totalWins.innerText = `Total Hands: ${data.totalHands}`;
+
+      let wins = document.getElementById("wins");
+      wins.innerText = `Wins: ${data.wins}`;
+
+      let blackjacks = document.getElementById("blackjacks");
+      blackjacks.innerText = `Blackjacks: ${data.blackjacks}`;
       // use the helper function to build an array of x to x2, inclusive, for the user's cards (sum, not_ace, or pair)
       let htAxis = buildAxis(5, 20);
       let stAxis = buildAxis(2, 9);

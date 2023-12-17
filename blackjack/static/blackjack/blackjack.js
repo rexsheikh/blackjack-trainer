@@ -497,11 +497,8 @@ function getRankCash() {
       }
       gamestate.cash = data.cash;
       gamestate.points = data.points;
-      let rankEl = document.getElementById("player-rank");
-      rankEl.innerText = `Rank: ${rank}`;
 
       let cashEl = document.getElementById("player-cash");
-
       cashEl.innerText = `Total Cash: $${data.cash}`;
 
       let totalBetEl = document.getElementById("total-bet");
