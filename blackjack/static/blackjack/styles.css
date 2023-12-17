@@ -40,13 +40,13 @@
   }
   
   .flip-card-front {
-    background-color: white;
-    color: black;
+    background-color:#323437;;
+    color: goldenrod;
   }
   
   .flip-card-back {
-    background-color: white;
-    color: black;
+    background-color: #323437;;
+    color: goldenrod;
     transform: rotateY(180deg);
   
     display: flex;
@@ -70,11 +70,13 @@
   
 .dealer-down{
     font-size: 13em;
+    background-color: #323437;;
+    color: goldenrod;
 }
 
 .background-container{
-  background-color: #323437 !important;
-  min-height: 100vh !important;
+  background-color: #323437;
+  min-height: 100vh;
 }
 body{
   margin:0;

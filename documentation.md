@@ -11,3 +11,19 @@
 6. plotly and stats
    - heatmap
    - streak
+
+mvp
+
+- on dealing blackjack, show cards and reset (rearrange call structure)
+- strat chart checkout
+
+  - eval hand does not take into account hard sum ace.
+  - verify correct charts are being used and correct responses logged
+
+- plotly heatmap for each hand type
+- modal or something to show the strat charts while playing
+- end game animations
+
+bonus
+
+- rank, points, progress bar
