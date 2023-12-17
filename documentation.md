@@ -35,7 +35,7 @@ bonus
   - show cash or points incrementing
 - rank, points, progress bar
 - conditional endstate colors/animations
-
-<a href="{% url 'blackjack' %}">
-    <h1>play blackjack</h1>
-</a>
+- bugs
+  - split evaluation
+    - show which hand is being evaluated, then update the endstate display according for each.
+    - extra split div needs to be deleted on reset

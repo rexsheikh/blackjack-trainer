@@ -49,6 +49,15 @@ class SoftTotal(models.Model):
     dealer_up = models.IntegerField()
     correct = models.BooleanField()
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "userId": self.user.id,
+            "not_ace": self.not_ace,
+            "dealer_up": self.dealer_up,
+            "correct": self.correct
+        }
+
 
 class Pair(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -56,3 +65,12 @@ class Pair(models.Model):
     pair = models.IntegerField()
     dealer_up = models.IntegerField()
     correct = models.BooleanField()
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "userId": self.user.id,
+            "pair": self.pair,
+            "dealer_up": self.dealer_up,
+            "correct": self.correct
+        }

@@ -163,12 +163,19 @@ def getHeatmaps(request):
         blackjacks = user_hands.filter(blackjack=True).count()
 
         raw_ht = [ht.serialize() for ht in HardTotal.objects.filter(user=user)]
+        raw_st = [st.serialize() for st in SoftTotal.objects.filter(user=user)]
+        raw_pair = [pair.serialize()
+                    for pair in Pair.objects.filter(user=user)]
         ht_data = ht_heatmap(raw_ht)
+        st_data = st_heatmap(raw_st)
+        pair_data = pair_heatmap(raw_pair)
         data = {
             "totalHands": total_hands,
             "wins": wins,
             "blackjacks": blackjacks,
-            "htData": ht_data
+            "htData": ht_data,
+            "stData": st_data,
+            "pairData": pair_data
         }
         return JsonResponse(data, safe=False)
 
@@ -176,11 +183,37 @@ def getHeatmaps(request):
 def ht_heatmap(data):
     rows, cols = (16, 10)
     correct_ctr = [[0]*cols]*rows
-    print(correct_ctr)
-    print(f"counter length: {len(correct_ctr)}")
 
     for i in range(len(data)):
         row = data[i]["hard_total"] - 5
+        col = data[i]["dealer_up"] - 2
+        print(f"raw : {data[i]}")
+        print(f"row: {row} col: {col}")
+        if data[i]["correct"] == 1:
+            correct_ctr[row][col] += 1
+
+    return correct_ctr
+
+
+def st_heatmap(data):
+    rows, cols = (8, 10)
+    correct_ctr = [[0]*cols]*rows
+    for i in range(len(data)):
+        row = data[i]["not_ace"] - 2
+        col = data[i]["dealer_up"] - 2
+        print(f"raw : {data[i]}")
+        print(f"row: {row} col: {col}")
+        if data[i]["correct"] == 1:
+            correct_ctr[row][col] += 1
+
+    return correct_ctr
+
+
+def pair_heatmap(data):
+    rows, cols = (10, 10)
+    correct_ctr = [[0]*cols]*rows
+    for i in range(len(data)):
+        row = data[i]["pair"] - 5
         col = data[i]["dealer_up"] - 2
         print(f"raw : {data[i]}")
         print(f"row: {row} col: {col}")

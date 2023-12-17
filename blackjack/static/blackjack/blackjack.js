@@ -664,8 +664,16 @@ function determineCorrect(choice) {
 }
 function getSum(cards) {
   let sum = 0;
+  let sTotal;
   for (let i = 0; i < cards.length; i++) {
+    if (cards[i].val === 11) {
+      sTotal = true;
+    }
     sum += cards[i].val;
+    if (sum > 21 && sTotal) {
+      console.log(`in get sum...treating 11 as one}`);
+      sum -= 10;
+    }
   }
   return sum;
 }
@@ -684,7 +692,7 @@ async function initialize() {
   }
   await deal();
   if (gamestate.debugMode) {
-    manualDealAssign(11, 4, 4, 5);
+    manualDealAssign(9, 9, 6, 3);
   } else {
     firstDeal();
   }
@@ -1162,9 +1170,21 @@ async function initSplit() {
   // add the new split card to player cards
   let playerCardDiv = document.getElementById("player-cards");
   let splitDiv = document.createElement("div");
-  splitDiv.classList.add("col", "p-3");
+  splitDiv.classList.add("col", "p-3", "hand");
   splitDiv.id = splitString;
-  splitDiv.innerHTML = `<h2>${splitCard}</h2>`;
+  splitDiv.innerHTML = ` 
+  <div class="flip-card"> 
+    <div class="flip-card-inner">
+      <div class="flip-card-front">
+        <h1>${splitCard.icon}</h1>
+      </div>
+    <div class="flip-card-back">
+        <h1>&#x1F0A0</h1>
+    </div>
+</div>
+  
+  </div>
+`;
   splitDiv.classList.add("col", "p-3");
   playerCardDiv.appendChild(splitDiv);
 
