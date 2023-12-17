@@ -36,3 +36,5 @@ Blackjack Trainer - READ ME
    a. Total wins, blackjack, and player information: This pieces of information are simple data retrievals to get the User's overall stats. The Hand model captures the outcome of each hand to include blackjacks. The user information stores their total cash.
 
    b. Plotly Heatmaps - The plotly heatmaps show a grid of response data for each strategy chart. Configuring the x and y axes describe the dealer's up card and the player's hand, respectively. From here, correct responses are retrieved from the database and placed into a two dimensional array that corresponds to their location on the chart. The overall chart aims to show player's weak points in their understanding of basic strategy and overall response trends. Hovering over each cell will give the exact number of correct responses for a given scenario.
+
+5. Video URL: https://youtu.be/I6eMsCr6y4s

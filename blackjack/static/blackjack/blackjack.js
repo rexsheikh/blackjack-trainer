@@ -442,7 +442,7 @@ const gamestate = {
   cash: 0,
   points: 0,
   totalBet: 0,
-  debugMode: true,
+  debugMode: false,
 };
 const cards = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 // Reference for unicode playing cards: https://en.wikipedia.org/wiki/Playing_Cards_(Unicode_block)
