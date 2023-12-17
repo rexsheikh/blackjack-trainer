@@ -455,7 +455,7 @@ const gamestate = {
   cash: 0,
   points: 0,
   totalBet: 0,
-  debugMode: false,
+  debugMode: true,
 };
 const cards = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
@@ -586,6 +586,13 @@ function getRandomCard() {
   let icon = iconLst[iconIdx];
   return {val, icon};
 }
+// used in debug bug to get a card value
+function getCard(val) {
+  let iconLst = cardIcons[val];
+  let iconIdx = Math.floor(Math.random() * iconLst.length);
+  let icon = iconLst[iconIdx];
+  return {val, icon};
+}
 function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
@@ -666,22 +673,35 @@ async function initialize() {
   console.log("initialize...");
   getRankCash();
   resetGameState();
+  while (true) {
+    await bet();
+    if (gamestate.totalBet > 0) {
+      break;
+    }
+  }
+  await deal();
   if (gamestate.debugMode) {
-    manualDealAssign(2, 2, 4, 5);
+    manualDealAssign(10, 11, 10, 11);
   } else {
     firstDeal();
   }
-  bet();
-
   const checkDeal = await initCheck();
   if (checkDeal != "proceed") {
     console.log("init check not proceed...");
+    toggleViews([
+      ["deal-btn-view", 0],
+      ["choice-view", 0],
+      ["deal-btn-view", 0],
+      ["deal-view", 1],
+      ["end-state-view", 0],
+    ]);
   } else {
     getChoice();
   }
 }
 
 function resetGameState() {
+  console.log("resetting gamestate...");
   toggleViews([
     ["bet-view", 1],
     ["deal-btn-view", 0],
@@ -699,14 +719,16 @@ function resetGameState() {
   gamestate.points = 0;
   gamestate.pHandEval = {};
   gamestate.dHandEval = {};
-  const playerCardDiv = document.getElementById("player-cards");
-  const dealerCardDiv = document.getElementById("dealer-cards");
+  let playerCardDiv = document.getElementById("player-cards");
+  let dealerCardDiv = document.getElementById("dealer-cards");
+  let endDiv = document.getElementById("end-state-view");
   while (playerCardDiv.firstChild) {
     playerCardDiv.removeChild(playerCardDiv.firstChild);
   }
   while (dealerCardDiv.firstChild) {
     dealerCardDiv.removeChild(dealerCardDiv.firstChild);
   }
+  endDiv.innerHTML = "";
   let firstDealDiv = document.createElement("div");
   firstDealDiv.classList.add("col", "p-3", "hand");
   firstDealDiv.id = "first-deal";
@@ -748,15 +770,20 @@ function firstDeal() {
   }
 }
 function manualDealAssign(pA, pB, dU, dD) {
+  pA = getCard(pA);
+  pB = getCard(pB);
+  dU = getCard(dU);
+  dD = getCard(dD);
   gamestate.pCards["first-deal"] = [pA, pB];
   gamestate.dCards = [dU, dD];
-  buildAssignCard(pA, "first-deal");
-  buildAssignCard(pB, "first-deal");
-  buildAssignCard(dU, "dealer-cards");
-  let cardEl = document.createElement("h2");
-  cardEl.id = "dealer-down";
-  cardEl.innerHTML = "dealerDown";
-  document.getElementById("dealer-cards").appendChild(cardEl);
+  buildAssignCard(pA.icon, "first-deal");
+  buildAssignCard(pB.icon, "first-deal");
+  buildAssignCard(dU.icon, "dealer-cards");
+  let dealerDown = document.createElement("div");
+  dealerDown.id = "dealer-down";
+  dealerDown.innerHTML = `<h1 class = "dealer-down">&#x1F0A0</h1>`;
+  let dealerHand = document.getElementById("dealer-cards");
+  dealerHand.appendChild(dealerDown);
 }
 
 async function initCheck() {
@@ -767,16 +794,14 @@ async function initCheck() {
     console.log("***init push***");
     await delay(1000);
     showDealerDown();
-    resetGameState();
-    initialize();
+    await processEndState(false, false);
   } else if (pSum != 21 && dSum === 21) {
     console.log("***init dealer blackjack***");
     logHand(false, false);
     await delay(1000);
     showDealerDown();
     logHand(0, 0);
-    resetGameState();
-    initialize();
+    await processEndState(false, false);
   } else if (pSum === 21 && dSum != 21) {
     console.log("player blackjack!");
     logHand(true, true);
@@ -788,38 +813,82 @@ async function initCheck() {
   }
 }
 // *********PLAYER ACTIONS / REACTIONS ********
-function bet() {
+async function bet() {
   console.log("bet...");
-  toggleViews([
-    ["deal-view", 0],
-    ["choice-view", 0],
-    ["deal-btn-view", 0],
-  ]);
-  const betBtns = document.querySelectorAll(".bet-btn");
-  let betHand = 0;
-  betBtns.forEach(function (btn) {
-    btn.addEventListener("click", function () {
+
+  return new Promise((resolve) => {
+    toggleViews([
+      ["deal-view", 0],
+      ["choice-view", 0],
+      ["deal-btn-view", 0],
+      ["bet-view", 1],
+    ]);
+
+    const betBtns = document.querySelectorAll(".bet-btn");
+    let betHand = 0;
+
+    const handleClick = function (btn) {
       betHand += parseInt(btn.getAttribute("data-chip-val"), 10);
       gamestate.totalBet = betHand;
       let updateBet = document.getElementById("total-bet");
       updateBet.innerText = `Total Bet: $${gamestate.totalBet}`;
       toggleViews([["deal-btn-view", 1]]);
+
+      // Remove event listeners to avoid multiple clicks
+      betBtns.forEach((btn) => {
+        btn.removeEventListener("click", handleClick);
+      });
+
+      resolve("bet complete");
+    };
+
+    betBtns.forEach((btn) => {
+      btn.addEventListener("click", () => handleClick(btn));
     });
   });
-  document
-    .getElementById("deal-btn-view")
-    .addEventListener("click", function () {
+}
+// document
+//   .getElementById("deal-btn-view")
+//   .addEventListener("click", function () {
+//     toggleViews([
+//       ["bet-view", 0],
+//       ["deal-view", 1],
+//       ["choice-view", 1],
+//     ]);
+//     gamestate.cash -= gamestate.totalBet;
+//     document.getElementById(
+//       "player-cash"
+//     ).innerText = `Total Cash: $${gamestate.cash}`;
+//     toggleViews([["deal-btn-view", 0]]);
+//     return Promise.resolve("deal complete");
+//   });
+
+async function deal() {
+  return new Promise((resolve) => {
+    const dealButton = document.getElementById("deal-btn-view");
+
+    const handleDealClick = function () {
       toggleViews([
         ["bet-view", 0],
         ["deal-view", 1],
         ["choice-view", 1],
       ]);
+
       gamestate.cash -= gamestate.totalBet;
       document.getElementById(
         "player-cash"
       ).innerText = `Total Cash: $${gamestate.cash}`;
+
       toggleViews([["deal-btn-view", 0]]);
-    });
+
+      // Remove the event listener to avoid multiple clicks
+      dealButton.removeEventListener("click", handleDealClick);
+
+      resolve("deal complete");
+    };
+
+    dealButton.addEventListener("click", handleDealClick);
+  });
 }
 function getChoice() {
   let currHand = gamestate.pCards[gamestate.queue[gamestate.queueCtr]];
@@ -896,14 +965,14 @@ function showDealerDown() {
   let cardEl = document.createElement("div");
   cardEl.classList.add("flip-card");
   cardEl.innerHTML = ` <div class="flip-card-inner">
-    <div class="flip-card-front">
-      <h1>${gamestate.dCards[1].icon}</h1>
+      <div class="flip-card-front">
+        <h1>${gamestate.dCards[1].icon}</h1>
+      </div>
+      <div class="flip-card-back">
+        <h1>&#x1F0A0</h1>
+      </div>
     </div>
-    <div class="flip-card-back">
-      <h1>&#x1F0A0</h1>
-    </div>
-  </div>
-`;
+  `;
   dealerCards.appendChild(cardEl);
 }
 function evalHand() {
@@ -1041,19 +1110,32 @@ async function determineEndWinner() {
   return;
 }
 async function processEndState(win, blackjack) {
+  toggleViews([["end-state-view", 1]]);
   if (win && blackjack) {
     logHand(true, true);
     gamestate.cash += gamestate.totalBet * 1.5;
     updateCashPoints();
+    displayEndState("BLACKJACK!");
   } else if (win) {
     logHand(true, false);
     gamestate.cash += gamestate.totalBet;
     updateCashPoints();
+    displayEndState("YOU WIN!");
   } else {
     logHand(false, false);
     updateCashPoints();
+    displayEndState("DEALER WINS!");
   }
   await delay(1000);
+  initialize();
+}
+
+async function displayEndState(endStr) {
+  let endDiv = document.getElementById("end-state-view");
+  let endContent = document.createElement("h2");
+  endContent.innerHTML = endStr;
+  endDiv.appendChild(endContent);
+  toggleViews([["end-state-view", 1]]);
 }
 async function initSplit() {
   toggleViews([["choice-view", 0]]);
@@ -1089,5 +1171,3 @@ document.addEventListener("DOMContentLoaded", function () {
   console.log("dom loaded...");
   initialize();
 });
-
-// ***stats functions***

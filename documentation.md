@@ -17,6 +17,10 @@ mvp
 - on dealing blackjack, show cards and reset (rearrange call structure)
 - strat chart checkout
 
+  - player initial blackjack (x)
+  - dealer initial blackjack (x)
+  - initial push (x)
+
   - eval hand does not take into account hard sum ace.
   - verify correct charts are being used and correct responses logged
 
@@ -26,4 +30,8 @@ mvp
 
 bonus
 
+- game flow
+  - better delays
+  - show cash or points incrementing
 - rank, points, progress bar
+- conditional endstate colors/animations
