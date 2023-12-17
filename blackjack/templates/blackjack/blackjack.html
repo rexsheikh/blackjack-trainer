@@ -1,4 +1,4 @@
-
+{% extends "blackjack/layout.html" %}
 {% load static %}
 
 <!DOCTYPE html>
@@ -14,13 +14,10 @@
     {% endblock %}
 </head>
 
-<body>
+{% block body %}
     <div class = "background-container">
         <div class = "container text-center player-info" id = "player-info-view">
             <div class="row align-items-end">
-                <div class="col p-4" >
-                    <h2 id = "player-rank"></h2>
-                </div>
                 <div class="col p-4">
                     <h2 id = "player-cash"></h2>
                 </div>
@@ -86,6 +83,6 @@
         </div>
     </div>
       
-</body>
+{% endblock %}
 
 </html>

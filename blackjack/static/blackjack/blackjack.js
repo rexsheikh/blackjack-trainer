@@ -1,21 +1,6 @@
 // strategy charts referenced from:
 // https://www.blackjackapprenticeship.com/blackjack-strategy-charts/
 
-// for assigning multiple variables at once in javascript
-// https://sabe.io/blog/javascript-declare-multiple-variables
-
-// destructuring statement:
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment
-
-// using reduce to sum a list:
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce
-
-// removing all children of a node:
-// https://www.javascripttutorial.net/dom/manipulating/remove-all-child-nodes/
-
-// removing event listeners with clone node and replace child
-// https://stackoverflow.com/questions/9251837/how-to-remove-all-listeners-in-an-element
-
 // keep track of player turn using variables (in this context, I am using gamestate)
 // https://stackoverflow.com/questions/56508951/how-do-i-keep-track-of-players-turn-in-game
 
@@ -26,6 +11,8 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from
 
 // *********GLOBAL VARIABLES AND CONSTANTS********
+// strategy charts referenced from:
+// https://www.blackjackapprenticeship.com/blackjack-strategy-charts/
 // playerSum:dealerUp:correctAns
 const stratHardTotal = {
   5: {
@@ -458,7 +445,7 @@ const gamestate = {
   debugMode: true,
 };
 const cards = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-
+// Reference for unicode playing cards: https://en.wikipedia.org/wiki/Playing_Cards_(Unicode_block)
 const cardIcons = {
   2: ["&#x1F0A2", "&#x1F0B2", "&#x1F0C2", "&#x1F0D2"],
   3: ["&#x1F0A3", "&#x1F0B3", "&#x1F0C3", "&#x1F0D3"],
@@ -489,6 +476,8 @@ const cardIcons = {
   11: [`&#x1F0A1`, `&#x1F0B1`, `&#x1F0C1`, `&#x1F0D1`],
 };
 // ****** API Requests **********
+// loads the players cash and rank
+// note: started to build out rank functionality but this feature is not fully implemented
 function getRankCash() {
   fetch(`blackjack/playerInfo`)
     .then((response) => response.json())
@@ -519,6 +508,8 @@ function getRankCash() {
       totalBetEl.innerText = `Total Bet: $${gamestate.totalBet}`;
     });
 }
+// at the conclusion of each hand, the player's cash is updated according to their
+// bet and whether they won or lost
 function updateCashPoints() {
   console.log(
     `updating cash to ${gamestate.cash} and points to ${gamestate.points}`
@@ -531,10 +522,9 @@ function updateCashPoints() {
     }),
   });
 }
+// log which chart to reference (which corresponds to a model), the player's hand,
+// the dealer's shown card and whether or not the response was correct
 function logChoice(chart, player, dU, correct) {
-  console.log(
-    `logging chart, player, dU, correct: ${chart} | ${player} | ${dU} | ${correct}`
-  );
   fetch("/blackjack/logChoice", {
     method: "POST",
     body: JSON.stringify({
@@ -549,6 +539,7 @@ function logChoice(chart, player, dU, correct) {
       console.log(result);
     });
 }
+// log the outcome of the hand whether it was a win or blackjack (both booleans)
 function logHand(win, blackjack) {
   fetch("/blackjack/logHand", {
     method: "POST",
@@ -563,6 +554,8 @@ function logHand(win, blackjack) {
     });
 }
 // ********* HELPER FUNCTIONS ********
+// takes a card icon and default placement of the current hand in the queue to create an html
+// element
 function buildAssignCard(
   cardIcon,
   placement = gamestate.queue[gamestate.queueCtr]
@@ -580,6 +573,7 @@ function buildAssignCard(
 `;
   document.getElementById(placement).appendChild(cardEl);
 }
+// gets a random card and icon.
 function getRandomCard() {
   // get a random value then a random suit (icon)
   let idx = Math.floor(Math.random() * cards.length);
@@ -596,9 +590,14 @@ function getCard(val) {
   let icon = iconLst[iconIdx];
   return {val, icon};
 }
+// delay function to add pauses between actions to smooth gameplay.
+// reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
+// I used the above to learn how to structure promises and their resolution.
 function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
+// checks the player's hand and finds the correct strategy chart to compare it against.
+// this function also logs whether the choice was correct
 function determineCorrect(choice) {
   // get the current hand string, then get the list of cards in the player hand object.
   console.log("determine correct...");
@@ -662,6 +661,8 @@ function determineCorrect(choice) {
     logChoice("hardTotal", sum, dU, logCorrect);
   }
 }
+// sum a given set of cards. note the detection of soft total. If there is an ace present and
+// it would put the player or dealer over into bust, it is automatically treated as a 1 instead of 11.
 function getSum(cards) {
   let sum = 0;
   let sTotal;
@@ -677,9 +678,10 @@ function getSum(cards) {
   }
   return sum;
 }
-// ********* INITIALIZE / RESET FUNCTIONS ********
-// intialize functions
-// bet, deal, eval
+// ********* INITIALIZE /  FUNCTIONS ********
+// main game loop that loads player information, resets any previous gamestate, forces
+// a user bet, deals cards (with manual assignment or random depending on debug mode)
+// checks the first deal, and proceeds into user choices.
 async function initialize() {
   console.log("initialize...");
   getRankCash();
@@ -692,13 +694,12 @@ async function initialize() {
   }
   await deal();
   if (gamestate.debugMode) {
-    manualDealAssign(9, 9, 6, 3);
+    manualDealAssign(6, 2, 4, 3);
   } else {
     firstDeal();
   }
   const checkDeal = await initCheck();
   if (checkDeal != "proceed") {
-    console.log("init check not proceed...");
     toggleViews([
       ["deal-btn-view", 0],
       ["choice-view", 0],
@@ -712,40 +713,47 @@ async function initialize() {
 }
 
 function resetGameState() {
+  // Reference for removing all children of a node:
+  // https://www.javascripttutorial.net/dom/manipulating/remove-all-child-nodes/
+  // I used the same reference for the delay function to structure a promise here.
   console.log("resetting gamestate...");
-  toggleViews([
-    ["bet-view", 1],
-    ["deal-btn-view", 0],
-    ["choice-view", 0],
-    ["deal-btn-view", 0],
-  ]);
-  gamestate.pCards = {
-    "first-deal": [],
-  };
-  gamestate.queue = ["first-deal", "dealer-cards"];
-  gamestate.queueCtr = 0;
-  gamestate.dCards = [];
-  gamestate.totalBet = 0;
-  gamestate.cash = 0;
-  gamestate.points = 0;
-  gamestate.pHandEval = {};
-  gamestate.dHandEval = {};
-  let playerCardDiv = document.getElementById("player-cards");
-  let dealerCardDiv = document.getElementById("dealer-cards");
-  let endDiv = document.getElementById("end-state-view");
-  while (playerCardDiv.firstChild) {
-    playerCardDiv.removeChild(playerCardDiv.firstChild);
-  }
-  while (dealerCardDiv.firstChild) {
-    dealerCardDiv.removeChild(dealerCardDiv.firstChild);
-  }
-  endDiv.innerHTML = "";
-  let firstDealDiv = document.createElement("div");
-  firstDealDiv.classList.add("col", "p-3", "hand");
-  firstDealDiv.id = "first-deal";
-  playerCardDiv.appendChild(firstDealDiv);
+  return new Promise((resolve) => {
+    toggleViews([
+      ["bet-view", 1],
+      ["deal-btn-view", 0],
+      ["choice-view", 0],
+      ["deal-btn-view", 0],
+    ]);
+    gamestate.pCards = {
+      "first-deal": [],
+    };
+    gamestate.queue = ["first-deal", "dealer-cards"];
+    gamestate.queueCtr = 0;
+    gamestate.dCards = [];
+    gamestate.totalBet = 0;
+    gamestate.cash = 0;
+    gamestate.points = 0;
+    gamestate.pHandEval = {};
+    gamestate.dHandEval = {};
+    let playerCardDiv = document.getElementById("player-cards");
+    let dealerCardDiv = document.getElementById("dealer-cards");
+    let endDiv = document.getElementById("end-state-view");
+    while (playerCardDiv.firstChild) {
+      playerCardDiv.removeChild(playerCardDiv.firstChild);
+    }
+    while (dealerCardDiv.firstChild) {
+      dealerCardDiv.removeChild(dealerCardDiv.firstChild);
+    }
+    endDiv.innerHTML = "";
+    let firstDealDiv = document.createElement("div");
+    firstDealDiv.classList.add("col", "p-3", "hand");
+    firstDealDiv.id = "first-deal";
+    playerCardDiv.appendChild(firstDealDiv);
+    resolve("reset complete");
+  });
 }
-
+// function that takes a list of actions to perform. for example, providing
+// toggleViews([["bet-view",1]]) will show the bet view.
 function toggleViews(actionList) {
   for (let i = 0; i < actionList.length; i++) {
     let [view, action] = actionList[i];
@@ -756,9 +764,8 @@ function toggleViews(actionList) {
     }
   }
 }
-
+// assigns a random cards to both player and dealer with the dealer's second card shown face down.
 function firstDeal() {
-  console.log("firstDeal...");
   for (let i = 0; i < 4; i++) {
     let card = getRandomCard();
     if (i % 2 == 0) {
@@ -780,6 +787,7 @@ function firstDeal() {
     }
   }
 }
+// manually assigns a value to player and dealer cards while getting a random icon for each.
 function manualDealAssign(pA, pB, dU, dD) {
   pA = getCard(pA);
   pB = getCard(pB);
@@ -796,7 +804,7 @@ function manualDealAssign(pA, pB, dU, dD) {
   let dealerHand = document.getElementById("dealer-cards");
   dealerHand.appendChild(dealerDown);
 }
-
+// checks the initial state of the game for dealer and player blackjack and logs the outcome, if applicable.
 async function initCheck() {
   let pSum = getSum(gamestate.pCards["first-deal"]);
   let dSum = getSum(gamestate.dCards);
@@ -824,9 +832,9 @@ async function initCheck() {
   }
 }
 // *********PLAYER ACTIONS / REACTIONS ********
+// bet function that increments the total bet while subtracting from the user's total cash.
+// a promise is used here to wait for a bet to be placed before proceeding to show the deal button.
 async function bet() {
-  console.log("bet...");
-
   return new Promise((resolve) => {
     toggleViews([
       ["deal-view", 0],
@@ -858,22 +866,9 @@ async function bet() {
     });
   });
 }
-// document
-//   .getElementById("deal-btn-view")
-//   .addEventListener("click", function () {
-//     toggleViews([
-//       ["bet-view", 0],
-//       ["deal-view", 1],
-//       ["choice-view", 1],
-//     ]);
-//     gamestate.cash -= gamestate.totalBet;
-//     document.getElementById(
-//       "player-cash"
-//     ).innerText = `Total Cash: $${gamestate.cash}`;
-//     toggleViews([["deal-btn-view", 0]]);
-//     return Promise.resolve("deal complete");
-//   });
-
+// similiar to bet, this uses a promise to ensure cards are dealt on the button press before proceeding.
+// the user's total cash is shown to be decremented by the total bet amount. on click, the deal btn is hidden and the game
+// proceeds.
 async function deal() {
   return new Promise((resolve) => {
     const dealButton = document.getElementById("deal-btn-view");
@@ -901,6 +896,7 @@ async function deal() {
     dealButton.addEventListener("click", handleDealClick);
   });
 }
+// gets the user choice, toggles the choice view off and deal view on and does the player choice.
 function getChoice() {
   let currHand = gamestate.pCards[gamestate.queue[gamestate.queueCtr]];
   // show hit and stand, always
@@ -921,7 +917,10 @@ function getChoice() {
   // add event listeners to the buttons
   const choiceBtns = document.querySelectorAll(".choice-btn");
   choiceBtns.forEach((btn) => {
-    // Create a clone of each button to remove existing event listeners
+    // Create a clone of each button to remove existing event listeners.
+    // I referenced: // removing event listeners with clone node and replace child
+    // https://stackoverflow.com/questions/9251837/how-to-remove-all-listeners-in-an-element
+    // to discover this method after I was having trouble with buttons doing multiple actions after the first action.
     const cloneBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(cloneBtn, btn);
     cloneBtn.addEventListener("click", function () {
@@ -932,23 +931,23 @@ function getChoice() {
     });
   });
 }
+// takes the user choice, processes the outcome of the choice, and either proceeds with the game (ie moving to dealer turn on bust)
+// or shows choices again.
 async function doPlayerChoice(choice) {
-  console.log(`choice is ${choice}`);
   if (choice === "hit") {
-    console.log("in the do player choice hit statement...");
     hit();
   } else if (choice === "stand") {
     // advance the counter and check the next hand. If dealer, end with dealer hit loop.
     // else, advanced to split which will need a hit to start.
     gamestate.queueCtr++;
-    await delay(1000);
+    await delay(2000);
     console.log(
       `current hand after stand: ${gamestate.queue[gamestate.queueCtr]}`
     );
     if (gamestate.queue[gamestate.queueCtr] === "dealer-cards") {
       dealerHitLoop();
     } else {
-      await delay(1000);
+      await delay(2000);
       hit();
     }
     // end player turn, dealer turn
@@ -958,10 +957,7 @@ async function doPlayerChoice(choice) {
     await hit();
     gamestate.queueCtr++;
     if (gamestate.queue[gamestate.queueCtr] === "dealer-cards") {
-      console.log(
-        `adv queue. current hand is ${gamestate.queue[gamestate.queueCtr]}`
-      );
-      await delay(1000);
+      await delay(2000);
       dealerHitLoop();
     } else {
       hit();
@@ -970,6 +966,7 @@ async function doPlayerChoice(choice) {
     initSplit();
   }
 }
+// reveals the dealers down card to begin the dealer's turn.
 function showDealerDown() {
   let dealerCards = document.getElementById("dealer-cards");
   dealerCards.removeChild(dealerCards.lastChild);
@@ -986,28 +983,9 @@ function showDealerDown() {
   `;
   dealerCards.appendChild(cardEl);
 }
-function evalHand() {
-  if (gamestate.currHand != "dealer-cards") {
-    console.log(`evaling player hand in evalHand()....`);
-    const sum = getSum(gamestate.pCards[gamestate.currHand]);
-    console.log(`eval hand sum is ... ${sum}`);
-    return sum;
-  } else {
-    let dealerState;
-    const sum = getSum(gamestate.dCards);
-    let dealerSoftTotal = gamestate.dCards.includes(11) ? true : false;
-    if (sum === 21) {
-      dealerState = "blackjack";
-    } else if (sum > 21) {
-      dealerState = "bust";
-    } else if (sum < 17 || (sum === 17 && dealerSoftTotal)) {
-      dealerState = "safeSum";
-    } else if (sum >= 17) {
-      dealerState = "dealerStand";
-    }
-    return {dealerState, sum};
-  }
-}
+
+// addes a card to the current hand. uses a promise to ensure that the function is carried out entirely before proceeding.
+// evaluates the condition of the hand to determine the next process.
 async function hit() {
   return new Promise((resolve) => {
     let currHand = gamestate.queue[gamestate.queueCtr];
@@ -1017,21 +995,15 @@ async function hit() {
     gamestate.pCards[currHand].push({val: card.val, icon: card.icon});
     console.log(`player hand after hit: ${JSON.stringify(gamestate.pCards)}`);
     buildAssignCard(card.icon);
-    console.log("hit complete");
     // get the player sum. if equal to or greater than 21, move to next hand (either next split or dealer)
     gamestate.pHandEval[gamestate.currHand] = evalHand();
-    console.log(
-      `pHand eval in hit...${gamestate.pHandEval[gamestate.currHand]}`
-    );
     if (
       gamestate.pHandEval[gamestate.currHand] === 21 ||
       gamestate.pHandEval[gamestate.currHand] > 21
     ) {
-      console.log("not a safe sum....");
       // await delay(1000);
       gamestate.queueCtr++;
       currHand = gamestate.queue[gamestate.queueCtr];
-      console.log(`changing turn to ${currHand}...`);
       if (currHand === "dealer-cards") {
         // queue has advanced to dealer-cards. show the down card and begin the dealer loop until complete.
         // evaluate end state and restart.
@@ -1042,22 +1014,16 @@ async function hit() {
       }
     } else {
       // the player has a safe hand and can choose again.
-      console.log("safe sum, show choices...");
       toggleViews([["choice-view", 1]]);
     }
     resolve("hit complete");
   });
 }
 // *******Evaluations and Transitions************
+// hits to the dealer hand until 17, bust, or 21
 async function dealerHitLoop() {
-  console.log(
-    `start dealer hit loop. dealer hand is ${JSON.stringify(gamestate.dCards)}`
-  );
   showDealerDown();
   gamestate.dHandEval = evalHand();
-  console.log(
-    `dealer first eval is...${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
-  );
   while (gamestate.dHandEval.dealerState === "safeSum") {
     await delay(1000);
     let card = getRandomCard();
@@ -1065,14 +1031,11 @@ async function dealerHitLoop() {
     gamestate.dCards.push({val: card.val, icon: card.icon});
     buildAssignCard(card.icon);
     gamestate.dHandEval = evalHand();
-    console.log(
-      `dealer next eval is...${gamestate.dHandEval.dealerState} | ${gamestate.dHandEval.sum}`
-    );
   }
-  console.log("end dealer hit loop...");
   await determineEndWinner();
-  initialize();
 }
+// evaluates the current hand for unsafe sums like 21 or blackjack to control the next process.returns the dealerstate and sum
+// to determine the end winner.
 function evalHand() {
   if (gamestate.queue[gamestate.queueCtr] != "dealer-cards") {
     const sum = getSum(gamestate.pCards[gamestate.queue[gamestate.queueCtr]]);
@@ -1093,9 +1056,8 @@ function evalHand() {
     return {dealerState, sum};
   }
 }
+//checks the player's sum, dealer state and if necessary compares sums to determine the end winner.
 async function determineEndWinner() {
-  console.log("determine end winner...");
-
   // push: equal sum and neither has busted.
   // lose: bust / dealerSum is greater and not bust.
   // win: greater and not bust / dealer bust.
@@ -1106,6 +1068,9 @@ async function determineEndWinner() {
     let pHand = gamestate.pCards[currHand];
     let pSum = getSum(pHand);
     let dSum = getSum(gamestate.dCards);
+    console.log(
+      `gamestate in determine end winner...${JSON.stringify(gamestate)}`
+    );
     if (pSum > 21) {
       // player bust, lose.
       // log a loss, no blackjack, and do not increment gamestate cash (player loses money).
@@ -1116,14 +1081,16 @@ async function determineEndWinner() {
       // push or loss. logged as a loss, player loses money.
       console.log("***PLAYER LOSES****");
       await processEndState(false, false);
-    } else if (pSum > dSum) {
+    } else if (pSum > dSum || gamestate.dHandEval.dealerState === "bust") {
       console.log("***PLAYER WINS****");
       await processEndState(true, false);
     }
   }
-  await delay(1000);
+  await delay(2000);
   return;
 }
+// shows the end-state (win or loss or blackjack) and logs the outcome of the hand. runs initialize() at the conclusion to restart
+// the game loop
 async function processEndState(win, blackjack) {
   toggleViews([["end-state-view", 1]]);
   if (win && blackjack) {
@@ -1141,10 +1108,11 @@ async function processEndState(win, blackjack) {
     updateCashPoints();
     displayEndState("DEALER WINS!");
   }
-  await delay(1000);
+  await delay(2000);
   initialize();
 }
 
+// toggles the end game message on. takes a string for the message.
 async function displayEndState(endStr) {
   let endDiv = document.getElementById("end-state-view");
   let endContent = document.createElement("h2");
@@ -1152,6 +1120,7 @@ async function displayEndState(endStr) {
   endDiv.appendChild(endContent);
   toggleViews([["end-state-view", 1]]);
 }
+// initializes the split operation by altering the player's cards object in the gamestate and building DOM elements for a proper display.
 async function initSplit() {
   toggleViews([["choice-view", 0]]);
   // get the current hand, take away the last card to create a new hand. create a split-string to create necessary keys and elements
@@ -1195,6 +1164,5 @@ async function initSplit() {
 
 // ******** Execute main game loop logic ************
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("dom loaded...");
   initialize();
 });

@@ -1,5 +1,5 @@
+{% extends "blackjack/layout.html" %}
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -15,11 +15,8 @@
     {% endblock %}
 </head>
 
-<body>
+{% block body %}
     <div class = "background-container">
-        <a href="{% url 'blackjack' %}">
-            <h1>play blackjack</h1>
-        </a>
         <div class = "container text-center player-info" id = "player-info-view">
             <div class="row align-items-end">
                 <div class="col p-4" >
@@ -37,4 +34,5 @@
         <div class = "container text-center player-info" id = "st-view"></div>
         <div class = "container text-center player-info" id = "pair-view"></div>
     </div>
+{% endblock %}
 </html>

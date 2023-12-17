@@ -90,3 +90,11 @@ body{
 .endstate{
   color: goldenrod;
 }
+
+.navbar-bg{
+  background-color: #323437;
+}
+
+.navbar-link{
+color: goldenrod;
+}
