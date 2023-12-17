@@ -16,6 +16,14 @@ class Hand(models.Model):
     win = models.BooleanField()
     blackjack = models.BooleanField()
 
+    def serialize(self):
+        return {
+            "id": self.id,
+            "userId": self.user.id,
+            "win": self.win,
+            "blackjack": self.blackjack
+        }
+
 
 class HardTotal(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -23,6 +31,15 @@ class HardTotal(models.Model):
     hard_total = models.IntegerField()
     dealer_up = models.IntegerField()
     correct = models.BooleanField()
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "userId": self.user.id,
+            "hard_total": self.hard_total,
+            "dealer_up": self.dealer_up,
+            "correct": self.correct
+        }
 
 
 class SoftTotal(models.Model):

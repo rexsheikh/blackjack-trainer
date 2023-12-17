@@ -532,6 +532,9 @@ function updateCashPoints() {
   });
 }
 function logChoice(chart, player, dU, correct) {
+  console.log(
+    `logging chart, player, dU, correct: ${chart} | ${player} | ${dU} | ${correct}`
+  );
   fetch("/blackjack/logChoice", {
     method: "POST",
     body: JSON.stringify({
@@ -681,7 +684,7 @@ async function initialize() {
   }
   await deal();
   if (gamestate.debugMode) {
-    manualDealAssign(10, 11, 10, 11);
+    manualDealAssign(11, 4, 4, 5);
   } else {
     firstDeal();
   }
@@ -944,7 +947,7 @@ async function doPlayerChoice(choice) {
   } else if (choice === "double") {
     let newBet = gamestate.totalBet * 2;
     gamestate.totalBet = newBet;
-    hit();
+    await hit();
     gamestate.queueCtr++;
     if (gamestate.queue[gamestate.queueCtr] === "dealer-cards") {
       console.log(
@@ -998,39 +1001,44 @@ function evalHand() {
   }
 }
 async function hit() {
-  let currHand = gamestate.queue[gamestate.queueCtr];
-  // hide choice view and push a card onto the current player hand.
-  toggleViews([["choice-view", 0]]);
-  let card = getRandomCard();
-  gamestate.pCards[currHand].push({val: card.val, icon: card.icon});
-  console.log(`player hand after hit: ${JSON.stringify(gamestate.pCards)}`);
-  buildAssignCard(card.icon);
-  console.log("hit complete");
-  // get the player sum. if equal to or greater than 21, move to next hand (either next split or dealer)
-  gamestate.pHandEval[gamestate.currHand] = evalHand();
-  console.log(`pHand eval in hit...${gamestate.pHandEval[gamestate.currHand]}`);
-  if (
-    gamestate.pHandEval[gamestate.currHand] === 21 ||
-    gamestate.pHandEval[gamestate.currHand] > 21
-  ) {
-    console.log("not a safe sum....");
-    await delay(1000);
-    gamestate.queueCtr++;
-    currHand = gamestate.queue[gamestate.queueCtr];
-    console.log(`changing turn to ${currHand}...`);
-    if (currHand === "dealer-cards") {
-      // queue has advanced to dealer-cards. show the down card and begin the dealer loop until complete.
-      // evaluate end state and restart.
-      dealerHitLoop();
+  return new Promise((resolve) => {
+    let currHand = gamestate.queue[gamestate.queueCtr];
+    // hide choice view and push a card onto the current player hand.
+    toggleViews([["choice-view", 0]]);
+    let card = getRandomCard();
+    gamestate.pCards[currHand].push({val: card.val, icon: card.icon});
+    console.log(`player hand after hit: ${JSON.stringify(gamestate.pCards)}`);
+    buildAssignCard(card.icon);
+    console.log("hit complete");
+    // get the player sum. if equal to or greater than 21, move to next hand (either next split or dealer)
+    gamestate.pHandEval[gamestate.currHand] = evalHand();
+    console.log(
+      `pHand eval in hit...${gamestate.pHandEval[gamestate.currHand]}`
+    );
+    if (
+      gamestate.pHandEval[gamestate.currHand] === 21 ||
+      gamestate.pHandEval[gamestate.currHand] > 21
+    ) {
+      console.log("not a safe sum....");
+      // await delay(1000);
+      gamestate.queueCtr++;
+      currHand = gamestate.queue[gamestate.queueCtr];
+      console.log(`changing turn to ${currHand}...`);
+      if (currHand === "dealer-cards") {
+        // queue has advanced to dealer-cards. show the down card and begin the dealer loop until complete.
+        // evaluate end state and restart.
+        dealerHitLoop();
+      } else {
+        // queue has advanced to a split card, initiate that hand with a split.
+        hit();
+      }
     } else {
-      // queue has advanced to a split card, initiate that hand with a split.
-      hit();
+      // the player has a safe hand and can choose again.
+      console.log("safe sum, show choices...");
+      toggleViews([["choice-view", 1]]);
     }
-  } else {
-    // the player has a safe hand and can choose again.
-    console.log("safe sum, show choices...");
-    toggleViews([["choice-view", 1]]);
-  }
+    resolve("hit complete");
+  });
 }
 // *******Evaluations and Transitions************
 async function dealerHitLoop() {
@@ -1088,7 +1096,6 @@ async function determineEndWinner() {
   for (let i = 0; i < gamestate.queue.length - 1; i++) {
     let currHand = gamestate.queue[i];
     let pHand = gamestate.pCards[currHand];
-    console.log(`determine winner pHand: ${pHand}`);
     let pSum = getSum(pHand);
     let dSum = getSum(gamestate.dCards);
     if (pSum > 21) {

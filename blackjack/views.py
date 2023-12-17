@@ -110,10 +110,10 @@ def logChoice(request):
             newHT = HardTotal(user=user, hard_total=data.get(
                 "player"), dealer_up=data.get("dU"), correct=data.get("correct"))
             newHT.save()
-            return JsonResponse({"message": "hard total captured successfully."}, status=201)
+            return JsonResponse({"message": "hard_total captured successfully."}, status=201)
         elif chart == "softTotal":
             newST = SoftTotal(user=user, not_ace=data.get(
-                "player"), dealer_up=data.get("dealer_up"), correct=data.get("correct"))
+                "player"), dealer_up=data.get("dU"), correct=data.get("correct"))
             newST.save()
             return JsonResponse({"message": "soft total captured successfully."}, status=201)
         elif chart == "pairs":
@@ -149,3 +149,42 @@ def updateCashPoints(request):
         user.points = data.get("points")
         user.save()
         return JsonResponse({"message": "points and cash updated successfully"}, status=201)
+
+
+@login_required
+@csrf_exempt
+def getHeatmaps(request):
+
+    if request.method == "GET":
+        user = User.objects.get(id=request.user.id)
+        user_hands = Hand.objects.filter(user=user)
+        total_hands = user_hands.count()
+        wins = user_hands.filter(win=True).count()
+        blackjacks = user_hands.filter(blackjack=True).count()
+
+        raw_ht = [ht.serialize() for ht in HardTotal.objects.filter(user=user)]
+        ht_data = ht_heatmap(raw_ht)
+        data = {
+            "totalHands": total_hands,
+            "wins": wins,
+            "blackjacks": blackjacks,
+            "htData": ht_data
+        }
+        return JsonResponse(data, safe=False)
+
+
+def ht_heatmap(data):
+    rows, cols = (16, 10)
+    correct_ctr = [[0]*cols]*rows
+    print(correct_ctr)
+    print(f"counter length: {len(correct_ctr)}")
+
+    for i in range(len(data)):
+        row = data[i]["hard_total"] - 5
+        col = data[i]["dealer_up"] - 2
+        print(f"raw : {data[i]}")
+        print(f"row: {row} col: {col}")
+        if data[i]["correct"] == 1:
+            correct_ctr[row][col] += 1
+
+    return correct_ctr

@@ -15,6 +15,6 @@ urlpatterns = [
     path("blackjack/logHand", views.logHand, name="logHand"),
     path("blackjack/updateCashPoints",
          views.updateCashPoints, name="updateCashPoints"),
-
+    path("menu/getHeatMaps", views.getHeatmaps, name="getHeatMaps"),
 
 ]
